@@ -418,6 +418,6 @@ earthquake-workflow/
 └── README.md                               # This file
 ```
 
-## Status
-
+## Authors
+Komal Thareja (kthare10@renci.org)
 Built with the assistance of [Claude](https://claude.ai), Anthropic's AI assistant.
