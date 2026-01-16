@@ -420,4 +420,5 @@ earthquake-workflow/
 
 ## Authors
 Komal Thareja (kthare10@renci.org)
-Built with the assistance of [Claude](https://claude.ai), Anthropic's AI assistant.
+
+P.S: Built with the assistance of [Claude](https://claude.ai), Anthropic's AI assistant.
