@@ -11,6 +11,10 @@ This script generates a Pegasus workflow for analyzing earthquake data from USGS
 5. Cluster earthquakes into seismic zones (DBSCAN, K-Means, or Hierarchical)
 6. Predict aftershock probabilities using statistical and ML models
 7. Visualize aftershock predictions (maps, probability charts, decay curves)
+8. Assess seismic hazard using GMPEs (ground shaking probability)
+9. Analyze seismic gaps (identify regions with anomalous quiescence)
+10. Visualize seismic hazard (hazard maps, curves, risk distribution)
+11. Visualize seismic gaps (gap maps, rate ratios, potential magnitudes)
 
 Usage:
     ./workflow_generator.py --regions california japan \
@@ -176,6 +180,42 @@ class EarthquakeWorkflow:
             container=earthquake_container,
         ).add_pegasus_profile(memory="2 GB")
 
+        assess_seismic_hazard = Transformation(
+            "assess_seismic_hazard",
+            site=exec_site_name,
+            pfn=os.path.join(self.wf_dir, "bin/assess_seismic_hazard.py"),
+            is_stageable=True,
+            container=earthquake_container,
+        ).add_pegasus_profile(memory="2 GB")
+
+        '''
+        analyze_seismic_gaps = Transformation(
+            "analyze_seismic_gaps",
+            site=exec_site_name,
+            pfn=os.path.join(self.wf_dir, "bin/analyze_seismic_gaps.py"),
+            is_stageable=True,
+            container=earthquake_container,
+        ).add_pegasus_profile(memory="2 GB")
+        '''
+
+        visualize_seismic_hazard = Transformation(
+            "visualize_seismic_hazard",
+            site=exec_site_name,
+            pfn=os.path.join(self.wf_dir, "bin/visualize_seismic_hazard.py"),
+            is_stageable=True,
+            container=earthquake_container,
+        ).add_pegasus_profile(memory="2 GB")
+
+        '''
+        visualize_seismic_gaps = Transformation(
+            "visualize_seismic_gaps",
+            site=exec_site_name,
+            pfn=os.path.join(self.wf_dir, "bin/visualize_seismic_gaps.py"),
+            is_stageable=True,
+            container=earthquake_container,
+        ).add_pegasus_profile(memory="2 GB")
+        '''
+
         self.tc.add_containers(earthquake_container)
         self.tc.add_transformations(
             fetch_earthquake_data,
@@ -184,7 +224,11 @@ class EarthquakeWorkflow:
             detect_seismic_anomalies,
             cluster_seismic_zones,
             predict_aftershocks,
-            visualize_aftershock_predictions
+            visualize_aftershock_predictions,
+            assess_seismic_hazard,
+            #analyze_seismic_gaps,
+            visualize_seismic_hazard,
+            #visualize_seismic_gaps
         )
 
     def create_replica_catalog(self):
@@ -196,7 +240,9 @@ class EarthquakeWorkflow:
     def create_workflow(self, regions, start_date, end_date, min_magnitude,
                         cluster_method="dbscan", cluster_eps=50.0,
                         cluster_min_samples=10, cluster_n_clusters=5,
-                        aftershock_threshold=5.0, aftershock_time_windows=[1, 7, 30]):
+                        aftershock_threshold=5.0, aftershock_time_windows=[1, 7, 30],
+                        hazard_grid_resolution=1.0, hazard_pga_thresholds=[0.1, 0.2, 0.4],
+                        gap_historical_years=20, gap_recent_years=5, gap_rate_threshold=0.3):
         """Create the workflow DAG."""
         logger.info("Creating workflow DAG")
         self.wf = Workflow(self.wf_name, infer_dependencies=True)
@@ -205,11 +251,15 @@ class EarthquakeWorkflow:
             self._add_region_jobs(region, start_date, end_date, min_magnitude,
                                  cluster_method, cluster_eps,
                                  cluster_min_samples, cluster_n_clusters,
-                                 aftershock_threshold, aftershock_time_windows)
+                                 aftershock_threshold, aftershock_time_windows,
+                                 hazard_grid_resolution, hazard_pga_thresholds,
+                                 gap_historical_years, gap_recent_years, gap_rate_threshold)
 
     def _add_region_jobs(self, region, start_date, end_date, min_magnitude,
                         cluster_method, cluster_eps, cluster_min_samples,
-                        cluster_n_clusters, aftershock_threshold, aftershock_time_windows):
+                        cluster_n_clusters, aftershock_threshold, aftershock_time_windows,
+                        hazard_grid_resolution, hazard_pga_thresholds,
+                        gap_historical_years, gap_recent_years, gap_rate_threshold):
         """Add jobs for a single region."""
         logger.info(f"Adding jobs for region: {region}")
 
@@ -221,6 +271,10 @@ class EarthquakeWorkflow:
         zones_file = File(f"{region}_zones.json")
         aftershock_file = File(f"{region}_aftershock_predictions.json")
         aftershock_viz_file = File(f"{region}_aftershock_visualization.png")
+        hazard_file = File(f"{region}_seismic_hazard.json")
+        #gaps_file = File(f"{region}_seismic_gaps.json")
+        hazard_viz_file = File(f"{region}_hazard_visualization.png")
+        #gaps_viz_file = File(f"{region}_gaps_visualization.png")
 
         # Job 1: Fetch earthquake data
         fetch_job = (
@@ -364,6 +418,92 @@ class EarthquakeWorkflow:
         )
         self.wf.add_jobs(aftershock_viz_job)
 
+        # Job 8: Assess seismic hazard
+        hazard_args = [
+            "--input", catalog_file,
+            "--output", hazard_file,
+            "--grid-resolution", str(hazard_grid_resolution),
+            "--pga-thresholds"
+        ]
+        hazard_args.extend([str(t) for t in hazard_pga_thresholds])
+
+        hazard_job = (
+            Job(
+                "assess_seismic_hazard",
+                _id=f"hazard_{region}",
+                node_label=f"hazard_{region}",
+            )
+            .add_args(*hazard_args)
+            .add_inputs(catalog_file)
+            .add_outputs(hazard_file, stage_out=True, register_replica=False)
+            .add_pegasus_profiles(label=region)
+        )
+        self.wf.add_jobs(hazard_job)
+
+        # Job 9: Analyze seismic gaps
+        '''
+        gaps_job = (
+            Job(
+                "analyze_seismic_gaps",
+                _id=f"gaps_{region}",
+                node_label=f"gaps_{region}",
+            )
+            .add_args(
+                "--input", catalog_file,
+                "--output", gaps_file,
+                "--historical-years", str(gap_historical_years),
+                "--recent-years", str(gap_recent_years),
+                "--rate-threshold", str(gap_rate_threshold)
+            )
+            .add_inputs(catalog_file)
+            .add_outputs(gaps_file, stage_out=True, register_replica=False)
+            .add_pegasus_profiles(label=region)
+        )
+        self.wf.add_jobs(gaps_job)
+        '''
+
+        # Job 10: Visualize seismic hazard
+        hazard_viz_title = f"{region.title()}_Seismic_Hazard"
+        hazard_viz_job = (
+            Job(
+                "visualize_seismic_hazard",
+                _id=f"hazard_viz_{region}",
+                node_label=f"hazard_viz_{region}",
+            )
+            .add_args(
+                "--input", hazard_file,
+                "--catalog", catalog_file,
+                "--output", hazard_viz_file,
+                "--title", hazard_viz_title
+            )
+            .add_inputs(hazard_file, catalog_file)
+            .add_outputs(hazard_viz_file, stage_out=True, register_replica=False)
+            .add_pegasus_profiles(label=region)
+        )
+        self.wf.add_jobs(hazard_viz_job)
+
+        '''
+        # Job 11: Visualize seismic gaps
+        gaps_viz_title = f"{region.title()}_Seismic_Gaps"
+        gaps_viz_job = (
+            Job(
+                "visualize_seismic_gaps",
+                _id=f"gaps_viz_{region}",
+                node_label=f"gaps_viz_{region}",
+            )
+            .add_args(
+                "--input", gaps_file,
+                "--catalog", catalog_file,
+                "--output", gaps_viz_file,
+                "--title", gaps_viz_title
+            )
+            .add_inputs(gaps_file, catalog_file)
+            .add_outputs(gaps_viz_file, stage_out=True, register_replica=False)
+            .add_pegasus_profiles(label=region)
+        )
+        self.wf.add_jobs(gaps_viz_job)
+        '''
+
 
 def parse_date(date_str: str) -> datetime:
     """Parse date string."""
@@ -486,6 +626,41 @@ Available regions:
         help="Time windows in days for aftershock predictions (default: 1 7 30)"
     )
 
+    # Seismic hazard assessment parameters
+    parser.add_argument(
+        "--hazard-grid-resolution",
+        type=float,
+        default=1.0,
+        help="Grid resolution for hazard analysis in degrees (default: 1.0)"
+    )
+    parser.add_argument(
+        "--hazard-pga-thresholds",
+        type=float,
+        nargs="+",
+        default=[0.1, 0.2, 0.4],
+        help="PGA thresholds in g for exceedance probability (default: 0.1 0.2 0.4)"
+    )
+
+    # Seismic gap analysis parameters
+    parser.add_argument(
+        "--gap-historical-years",
+        type=int,
+        default=20,
+        help="Historical period for gap analysis in years (default: 20)"
+    )
+    parser.add_argument(
+        "--gap-recent-years",
+        type=int,
+        default=5,
+        help="Recent period for gap analysis in years (default: 5)"
+    )
+    parser.add_argument(
+        "--gap-rate-threshold",
+        type=float,
+        default=0.3,
+        help="Rate ratio threshold for gap detection (default: 0.3)"
+    )
+
     args = parser.parse_args()
 
     # Parse dates
@@ -511,6 +686,8 @@ Available regions:
     logger.info(f"Minimum magnitude: {args.min_magnitude}")
     logger.info(f"Clustering: {args.cluster_method}")
     logger.info(f"Aftershock threshold: M{args.aftershock_threshold}")
+    logger.info(f"Hazard grid resolution: {args.hazard_grid_resolution}°")
+    logger.info(f"Gap analysis: historical={args.gap_historical_years}yr, recent={args.gap_recent_years}yr")
     logger.info(f"Execution site: {args.execution_site_name}")
     logger.info(f"Output file: {args.output}")
     logger.info("=" * 70)
@@ -543,7 +720,12 @@ Available regions:
             cluster_min_samples=args.cluster_min_samples,
             cluster_n_clusters=args.cluster_n_clusters,
             aftershock_threshold=args.aftershock_threshold,
-            aftershock_time_windows=args.aftershock_time_windows
+            aftershock_time_windows=args.aftershock_time_windows,
+            hazard_grid_resolution=args.hazard_grid_resolution,
+            hazard_pga_thresholds=args.hazard_pga_thresholds,
+            gap_historical_years=args.gap_historical_years,
+            gap_recent_years=args.gap_recent_years,
+            gap_rate_threshold=args.gap_rate_threshold
         )
 
         workflow.write()

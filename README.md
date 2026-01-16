@@ -1,6 +1,6 @@
 # Earthquake/Seismic Data Workflow
 
-A Pegasus-based workflow for analyzing earthquake data from the USGS Earthquake API, demonstrating AI-assisted scientific workflow development.
+A Pegasus-based workflow for analyzing earthquake data from the USGS Earthquake API, demonstrating AI-assisted scientific workflow development with ML-based predictions.
 
 ## Overview
 
@@ -44,10 +44,26 @@ This workflow fetches, analyzes, and visualizes earthquake data from the USGS FD
   - 17 seismic features including b-value, moment rate, historical patterns
   - Training and inference modes
 
+- **Seismic Hazard Assessment**: Probabilistic seismic hazard analysis (PSHA)
+  - Ground Motion Prediction Equations (GMPEs): NGA-West2, Boore-Atkinson
+  - Grid-based hazard mapping
+  - PGA exceedance probability calculations
+  - Hazard curves for multiple return periods (50, 100, 475 years)
+  - Risk level classification (very_low → very_high)
+
+- **Seismic Gap Analysis**: Identify regions with anomalous quiescence
+  - Temporal rate comparison (historical vs recent periods)
+  - Poisson significance testing for rate decreases
+  - Moment deficit estimation
+  - Potential magnitude calculation
+  - Composite risk scoring
+
 ### Visualization
 
 - **Earthquake Visualization**: Geographic maps, time series, magnitude-depth plots
 - **Aftershock Visualization**: Mainshock maps, probability charts, Omori decay curves
+- **Hazard Visualization**: PGA maps, risk distribution, hazard curves, exceedance summaries
+- **Gap Visualization**: Gap maps, rate ratio heatmaps, potential magnitude charts
 
 ### Workflow Orchestration
 
@@ -125,6 +141,31 @@ pegasus-status <submit_dir>
     --input california_aftershock_predictions.json \
     --catalog california_catalog.csv \
     --output california_aftershock_viz.png
+
+# Assess seismic hazard
+./bin/assess_seismic_hazard.py \
+    --input california_catalog.csv \
+    --output california_hazard.json \
+    --grid-resolution 0.5
+
+# Visualize seismic hazard
+./bin/visualize_seismic_hazard.py \
+    --input california_hazard.json \
+    --catalog california_catalog.csv \
+    --output california_hazard_viz.png
+
+# Analyze seismic gaps
+./bin/analyze_seismic_gaps.py \
+    --input california_catalog.csv \
+    --output california_gaps.json \
+    --historical-years 20 \
+    --recent-years 5
+
+# Visualize seismic gaps
+./bin/visualize_seismic_gaps.py \
+    --input california_gaps.json \
+    --catalog california_catalog.csv \
+    --output california_gaps_viz.png
 ```
 
 ## Workflow Architecture
@@ -203,6 +244,15 @@ Clustering Options:
 Aftershock Prediction Options:
   --aftershock-threshold FLOAT    Min magnitude for mainshock (default: 5.0)
   --aftershock-time-windows INT+  Time windows in days (default: 1 7 30)
+
+Seismic Hazard Options:
+  --hazard-grid-resolution FLOAT  Grid resolution in degrees (default: 1.0)
+  --hazard-pga-thresholds FLOAT+  PGA thresholds in g (default: 0.1 0.2 0.4)
+
+Seismic Gap Options:
+  --gap-historical-years INT      Historical period in years (default: 20)
+  --gap-recent-years INT          Recent period in years (default: 5)
+  --gap-rate-threshold FLOAT      Rate ratio threshold for gaps (default: 0.3)
 ```
 
 ### Workflow Examples
@@ -221,14 +271,14 @@ Aftershock Prediction Options:
     --cluster-method kmeans \
     --cluster-n-clusters 8
 
-# DBSCAN with custom parameters
+# Custom aftershock and hazard settings
 ./workflow_generator.py --regions japan \
     --start-date 2024-01-01 \
-    --cluster-method dbscan \
-    --cluster-eps 75 \
-    --cluster-min-samples 15
+    --aftershock-threshold 4.5 \
+    --hazard-grid-resolution 0.5 \
+    --gap-historical-years 30
 
-# Higher magnitude threshold
+# Higher magnitude threshold for global analysis
 ./workflow_generator.py --regions pacific_ring \
     --start-date 2024-01-01 \
     --min-magnitude 5.0
@@ -300,6 +350,25 @@ For each region, the workflow produces:
   - Probability estimation for M>=5 aftershocks
 - **Modes**: Training and inference
 
+### Seismic Hazard Assessment (`assess_seismic_hazard.py`)
+- **GMPEs**: Simplified NGA-West2, Boore-Atkinson (2008)
+- **PSHA**: Probabilistic Seismic Hazard Analysis
+- **Outputs**:
+  - PGA at grid points
+  - Exceedance probabilities for thresholds
+  - Hazard curves (return periods: 50, 100, 475 years)
+  - Risk level classification
+
+### Seismic Gap Analysis (`analyze_seismic_gaps.py`)
+- **Temporal Analysis**: Historical vs recent seismicity comparison
+- **Gap Detection**:
+  - Rate ratio method
+  - Poisson significance testing
+  - Moment deficit estimation
+- **Risk Assessment**:
+  - Potential magnitude from moment deficit
+  - Composite risk scoring
+  - Gap region merging
 
 ## Data Fields
 
@@ -412,6 +481,10 @@ earthquake-workflow/
 │   ├── cluster_seismic_zones.py           # Spatial clustering
 │   ├── predict_aftershocks.py             # Aftershock prediction (Omori + ML)
 │   ├── visualize_aftershock_predictions.py# Aftershock visualization
+│   ├── assess_seismic_hazard.py           # Seismic hazard assessment (PSHA)
+│   ├── visualize_seismic_hazard.py        # Hazard visualization
+│   ├── analyze_seismic_gaps.py            # Seismic gap detection
+│   └── visualize_seismic_gaps.py          # Gap visualization
 ├── workflow_generator.py                   # Pegasus workflow generator
 ├── scratch/                                # Workflow scratch space
 ├── output/                                 # Workflow outputs
