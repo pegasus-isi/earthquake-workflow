@@ -161,6 +161,8 @@ def split_catalog_by_time(df: pd.DataFrame, historical_years: float,
     """
     Split catalog into historical and recent periods.
 
+    Auto-adjusts periods if the data span is insufficient.
+
     Args:
         df: Earthquake catalog with 'time' column
         historical_years: Length of historical period
@@ -173,33 +175,70 @@ def split_catalog_by_time(df: pd.DataFrame, historical_years: float,
     df['time'] = pd.to_datetime(df['time'], format='mixed', utc=True)
     df = df.sort_values('time')
 
-    # Define time boundaries
+    # Calculate actual data span
+    start_time = df['time'].min()
     end_time = df['time'].max()
+    total_span_days = (end_time - start_time).days
+    total_span_years = total_span_days / 365.25
+
+    logger.info(f"Data spans {total_span_years:.1f} years ({start_time.date()} to {end_time.date()})")
+
+    # Check if we have enough data for requested periods
+    requested_total = historical_years + recent_years
+
+    if total_span_years < requested_total:
+        logger.warning(f"Data span ({total_span_years:.1f} years) is less than requested "
+                      f"historical ({historical_years}) + recent ({recent_years}) = {requested_total} years")
+
+        # Auto-adjust: use 80% for historical, 20% for recent (or minimum 1 year recent)
+        if total_span_years < 2:
+            # Very short data: split 50/50
+            recent_years = total_span_years / 2
+            historical_years = total_span_years / 2
+            logger.info(f"Auto-adjusted to {historical_years:.1f} years historical, "
+                       f"{recent_years:.1f} years recent (50/50 split)")
+        else:
+            # Use at least 1 year for recent, rest for historical
+            recent_years = min(recent_years, max(1.0, total_span_years * 0.2))
+            historical_years = total_span_years - recent_years
+            logger.info(f"Auto-adjusted to {historical_years:.1f} years historical, "
+                       f"{recent_years:.1f} years recent")
+
+    # Define time boundaries
     recent_start = end_time - timedelta(days=recent_years * 365.25)
     historical_end = recent_start
     historical_start = historical_end - timedelta(days=historical_years * 365.25)
+
+    # Ensure historical_start doesn't go before data start
+    if historical_start < start_time:
+        historical_start = start_time
 
     # Split catalog
     historical_df = df[(df['time'] >= historical_start) & (df['time'] < historical_end)]
     recent_df = df[df['time'] >= recent_start]
 
+    # Recalculate actual years based on data
+    actual_historical_years = (historical_end - historical_start).days / 365.25
+    actual_recent_years = (end_time - recent_start).days / 365.25
+
     period_info = {
         'historical': {
             'start': historical_start.isoformat(),
             'end': historical_end.isoformat(),
-            'years': historical_years,
+            'years': float(actual_historical_years),
             'n_events': len(historical_df)
         },
         'recent': {
             'start': recent_start.isoformat(),
             'end': end_time.isoformat(),
-            'years': recent_years,
+            'years': float(actual_recent_years),
             'n_events': len(recent_df)
-        }
+        },
+        'auto_adjusted': total_span_years < requested_total
     }
 
-    logger.info(f"Historical period: {len(historical_df)} events over {historical_years} years")
-    logger.info(f"Recent period: {len(recent_df)} events over {recent_years} years")
+    logger.info(f"Historical period: {len(historical_df)} events over {actual_historical_years:.1f} years")
+    logger.info(f"Recent period: {len(recent_df)} events over {actual_recent_years:.1f} years")
 
     return historical_df, recent_df, period_info
 
@@ -631,8 +670,12 @@ def run_gap_analysis(df: pd.DataFrame, args) -> Dict[str, Any]:
     )
 
     if len(historical_df) == 0:
-        logger.warning("No events in historical period")
-        return {'error': 'No events in historical period'}
+        logger.warning("No events in historical period after auto-adjustment")
+        return {'error': 'No events in historical period. Data span may be too short for gap analysis.'}
+
+    # Get actual period lengths (may have been auto-adjusted)
+    actual_historical_years = period_info['historical']['years']
+    actual_recent_years = period_info['recent']['years']
 
     # Create analysis grid
     grid_cells = create_analysis_grid(df_filtered, args.grid_resolution)
@@ -647,7 +690,7 @@ def run_gap_analysis(df: pd.DataFrame, args) -> Dict[str, Any]:
 
         result = analyze_grid_cell(
             cell, historical_df, recent_df,
-            args.historical_years, args.recent_years,
+            actual_historical_years, actual_recent_years,
             args.rate_threshold, args.min_historical_events,
             args.min_significance
         )

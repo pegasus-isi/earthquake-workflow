@@ -4,7 +4,7 @@ A Pegasus-based workflow for analyzing earthquake data from the USGS Earthquake 
 
 ## Overview
 
-This workflow fetches, analyzes, and visualizes earthquake data from the USGS FDSNWS Event web service, providing insights into seismic patterns, aftershock sequences, and spatial-temporal clustering.
+This workflow fetches, analyzes, and visualizes earthquake data from the USGS FDSNWS Event web service, providing insights into seismic patterns, aftershock sequences, spatial-temporal clustering, seismic hazard assessment, and seismic gap detection.
 
 **API**: https://earthquake.usgs.gov/fdsnws/event/1/
 

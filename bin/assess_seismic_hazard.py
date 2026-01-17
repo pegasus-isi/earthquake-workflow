@@ -337,11 +337,11 @@ def calculate_site_hazard(site_lat: float, site_lon: float, df: pd.DataFrame,
         distance = calculate_rupture_distance(
             site_lat, site_lon,
             event['latitude'], event['longitude'],
-            event.get('depth', 10.0)
+            event.get('depth_km', 10.0)
         )
 
         pga, sigma = calculate_pga(
-            event['magnitude'], distance, event.get('depth', 10.0),
+            event['magnitude'], distance, event.get('depth_km', 10.0),
             vs30, gmpe_model
         )
 
@@ -656,9 +656,9 @@ Examples:
             sys.exit(1)
 
         # Handle depth column
-        if 'depth' not in df.columns:
-            logger.warning("No 'depth' column found, using default 10 km")
-            df['depth'] = 10.0
+        if 'depth_km' not in df.columns:
+            logger.warning("No 'depth_km' column found, using default 10 km")
+            df['depth_km'] = 10.0
 
         # Run hazard assessment
         report = run_hazard_assessment(df, args)

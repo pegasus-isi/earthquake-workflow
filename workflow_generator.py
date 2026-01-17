@@ -188,7 +188,6 @@ class EarthquakeWorkflow:
             container=earthquake_container,
         ).add_pegasus_profile(memory="2 GB")
 
-        '''
         analyze_seismic_gaps = Transformation(
             "analyze_seismic_gaps",
             site=exec_site_name,
@@ -196,7 +195,7 @@ class EarthquakeWorkflow:
             is_stageable=True,
             container=earthquake_container,
         ).add_pegasus_profile(memory="2 GB")
-        '''
+
 
         visualize_seismic_hazard = Transformation(
             "visualize_seismic_hazard",
@@ -206,7 +205,7 @@ class EarthquakeWorkflow:
             container=earthquake_container,
         ).add_pegasus_profile(memory="2 GB")
 
-        '''
+
         visualize_seismic_gaps = Transformation(
             "visualize_seismic_gaps",
             site=exec_site_name,
@@ -214,7 +213,7 @@ class EarthquakeWorkflow:
             is_stageable=True,
             container=earthquake_container,
         ).add_pegasus_profile(memory="2 GB")
-        '''
+
 
         self.tc.add_containers(earthquake_container)
         self.tc.add_transformations(
@@ -290,7 +289,7 @@ class EarthquakeWorkflow:
                 "--min-magnitude", str(min_magnitude),
                 "--output", catalog_file
             )
-            .add_outputs(catalog_file, stage_out=False, register_replica=False)
+            .add_outputs(catalog_file, stage_out=True, register_replica=False)
             .add_pegasus_profiles(label=region)
         )
         self.wf.add_jobs(fetch_job)
@@ -441,7 +440,6 @@ class EarthquakeWorkflow:
         self.wf.add_jobs(hazard_job)
 
         # Job 9: Analyze seismic gaps
-        '''
         gaps_job = (
             Job(
                 "analyze_seismic_gaps",
@@ -460,7 +458,6 @@ class EarthquakeWorkflow:
             .add_pegasus_profiles(label=region)
         )
         self.wf.add_jobs(gaps_job)
-        '''
 
         # Job 10: Visualize seismic hazard
         hazard_viz_title = f"{region.title()}_Seismic_Hazard"
@@ -482,7 +479,7 @@ class EarthquakeWorkflow:
         )
         self.wf.add_jobs(hazard_viz_job)
 
-        '''
+
         # Job 11: Visualize seismic gaps
         gaps_viz_title = f"{region.title()}_Seismic_Gaps"
         gaps_viz_job = (
@@ -502,8 +499,6 @@ class EarthquakeWorkflow:
             .add_pegasus_profiles(label=region)
         )
         self.wf.add_jobs(gaps_viz_job)
-        '''
-
 
 def parse_date(date_str: str) -> datetime:
     """Parse date string."""
