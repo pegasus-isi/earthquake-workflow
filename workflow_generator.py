@@ -225,9 +225,9 @@ class EarthquakeWorkflow:
             predict_aftershocks,
             visualize_aftershock_predictions,
             assess_seismic_hazard,
-            #analyze_seismic_gaps,
+            analyze_seismic_gaps,
             visualize_seismic_hazard,
-            #visualize_seismic_gaps
+            visualize_seismic_gaps
         )
 
     def create_replica_catalog(self):
