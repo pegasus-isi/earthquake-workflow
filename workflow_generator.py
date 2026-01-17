@@ -271,9 +271,9 @@ class EarthquakeWorkflow:
         aftershock_file = File(f"{region}_aftershock_predictions.json")
         aftershock_viz_file = File(f"{region}_aftershock_visualization.png")
         hazard_file = File(f"{region}_seismic_hazard.json")
-        #gaps_file = File(f"{region}_seismic_gaps.json")
+        gaps_file = File(f"{region}_seismic_gaps.json")
         hazard_viz_file = File(f"{region}_hazard_visualization.png")
-        #gaps_viz_file = File(f"{region}_gaps_visualization.png")
+        gaps_viz_file = File(f"{region}_gaps_visualization.png")
 
         # Job 1: Fetch earthquake data
         fetch_job = (
