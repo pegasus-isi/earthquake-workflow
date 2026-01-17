@@ -497,7 +497,7 @@ If you use this workflow in your research, please cite:
 
 ```
 @misc{earthquake-workflow,
-  title={Air Quality Analysis and Forecasting Workflow using Pegasus WMS},
+  title={Earthquake/Seismic Data Workflow using Pegasus WMS},
   year={2025},
   publisher={GitHub},
   url={https://github.com/pegasus-isi/earthquake-workflow}
