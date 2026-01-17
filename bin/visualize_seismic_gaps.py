@@ -142,8 +142,8 @@ def create_gap_map(gap_data: Dict, ax: plt.Axes, catalog: Optional[pd.DataFrame]
         mpatches.Patch(color=RISK_COLORS['moderate'], label='Moderate'),
         mpatches.Patch(color=RISK_COLORS['low'], label='Low'),
     ]
-    ax.legend(handles=legend_elements, loc='lower center', bbox_to_anchor=(0.5, -0.12),
-              ncol=4, fontsize=8, title='Gap Risk Level', title_fontsize=9)
+    ax.legend(handles=legend_elements, loc='lower right',
+              ncol=2, fontsize=7, title='Risk', title_fontsize=8)
 
     ax.set_xlabel('Longitude', fontsize=10)
     ax.set_ylabel('Latitude', fontsize=10)
@@ -400,19 +400,14 @@ def create_visualization(gap_data: Dict, output_file: str, title: str,
     """
     logger.info("Creating gap visualization...")
 
-    # Create figure with subplots
-    fig = plt.figure(figsize=(18, 12))
+    # Create figure with subplots - use fixed layout for consistent sizing
+    fig, axes = plt.subplots(2, 3, figsize=(16, 10))
+    fig.subplots_adjust(left=0.05, right=0.95, top=0.92, bottom=0.08,
+                        hspace=0.28, wspace=0.25)
 
-    # Define grid layout
-    gs = fig.add_gridspec(2, 3, hspace=0.35, wspace=0.3)
-
-    # Create subplots
-    ax1 = fig.add_subplot(gs[0, 0])  # Gap map
-    ax2 = fig.add_subplot(gs[0, 1])  # Rate ratio heatmap
-    ax3 = fig.add_subplot(gs[0, 2])  # Risk score chart
-    ax4 = fig.add_subplot(gs[1, 0])  # Temporal comparison
-    ax5 = fig.add_subplot(gs[1, 1])  # Potential magnitude
-    ax6 = fig.add_subplot(gs[1, 2])  # Summary statistics
+    # Flatten axes for easy access
+    ax1, ax2, ax3 = axes[0]
+    ax4, ax5, ax6 = axes[1]
 
     # Create each panel
     create_gap_map(gap_data, ax1, catalog)
@@ -423,10 +418,10 @@ def create_visualization(gap_data: Dict, output_file: str, title: str,
     create_summary_statistics(gap_data, ax6)
 
     # Main title
-    fig.suptitle(title.replace('_', ' '), fontsize=16, fontweight='bold', y=0.98)
+    fig.suptitle(title.replace('_', ' '), fontsize=16, fontweight='bold')
 
-    # Save figure
-    plt.savefig(output_file, dpi=150, bbox_inches='tight', facecolor='white')
+    # Save figure with fixed dimensions (no bbox_inches='tight' to avoid expansion)
+    plt.savefig(output_file, dpi=150, facecolor='white', edgecolor='none')
     plt.close()
 
     logger.info(f"Visualization saved to {output_file}")

@@ -161,8 +161,7 @@ def create_risk_distribution_map(hazard_data: Dict, ax: plt.Axes):
     ax.set_xlabel('Longitude', fontsize=10)
     ax.set_ylabel('Latitude', fontsize=10)
     ax.set_title('Risk Level Distribution', fontsize=14, fontweight='bold')
-    ax.legend(loc='lower center', bbox_to_anchor=(0.5, -0.15),
-              ncol=3, fontsize=8, framealpha=0.9)
+    ax.legend(loc='lower right', ncol=2, fontsize=7, framealpha=0.9)
 
 
 def create_hazard_curves(hazard_data: Dict, ax: plt.Axes):
@@ -383,19 +382,14 @@ def create_visualization(hazard_data: Dict, output_file: str, title: str,
     """
     logger.info("Creating hazard visualization...")
 
-    # Create figure with subplots
-    fig = plt.figure(figsize=(18, 12))
+    # Create figure with subplots - use constrained_layout for proper spacing
+    fig, axes = plt.subplots(2, 3, figsize=(16, 10))
+    fig.subplots_adjust(left=0.05, right=0.95, top=0.92, bottom=0.08,
+                        hspace=0.25, wspace=0.25)
 
-    # Define grid layout
-    gs = fig.add_gridspec(2, 3, hspace=0.3, wspace=0.3)
-
-    # Create subplots
-    ax1 = fig.add_subplot(gs[0, 0])  # Hazard map
-    ax2 = fig.add_subplot(gs[0, 1])  # Risk distribution
-    ax3 = fig.add_subplot(gs[0, 2])  # Hazard curves
-    ax4 = fig.add_subplot(gs[1, 0])  # Exceedance summary
-    ax5 = fig.add_subplot(gs[1, 1])  # PGA histogram
-    ax6 = fig.add_subplot(gs[1, 2])  # Statistics
+    # Flatten axes for easy access
+    ax1, ax2, ax3 = axes[0]
+    ax4, ax5, ax6 = axes[1]
 
     # Create each panel
     create_hazard_map(hazard_data, ax1, catalog)
@@ -406,10 +400,10 @@ def create_visualization(hazard_data: Dict, output_file: str, title: str,
     create_regional_statistics(hazard_data, ax6)
 
     # Main title
-    fig.suptitle(title.replace('_', ' '), fontsize=16, fontweight='bold', y=0.98)
+    fig.suptitle(title.replace('_', ' '), fontsize=16, fontweight='bold')
 
-    # Save figure
-    plt.savefig(output_file, dpi=150, bbox_inches='tight', facecolor='white')
+    # Save figure with fixed dimensions (no bbox_inches='tight' to avoid expansion)
+    plt.savefig(output_file, dpi=150, facecolor='white', edgecolor='none')
     plt.close()
 
     logger.info(f"Visualization saved to {output_file}")
