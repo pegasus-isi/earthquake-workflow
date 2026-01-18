@@ -12,3 +12,4 @@ pegasus-wms>=5.0.0
 # Optional: For local development/testing
 jupyter>=1.0.0
 ipython>=8.0.0
+scikit-learn

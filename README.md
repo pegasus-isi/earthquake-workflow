@@ -73,6 +73,43 @@ This workflow fetches, analyzes, and visualizes earthquake data from the USGS FD
   - Parallel job execution
   - 11-step analysis pipeline
 
+## Prerequisites: Pegasus/HTCondor Cluster
+
+Before running this workflow, you need a Pegasus/HTCondor cluster. This cluster can be deployed on any infrastructure that supports HTCondor and Pegasus WMS, including cloud providers (AWS, GCP, Azure), on-premises clusters, or research testbeds.
+
+Below we provide an example of how to deploy the cluster on the [FABRIC testbed](https://fabric-testbed.net/):
+
+### Option 1: FABRIC Artifact (Recommended)
+
+Download and run the pre-configured Pegasus-FABRIC notebook from the FABRIC Artifacts repository:
+
+**Artifact URL**: https://artifacts.fabric-testbed.net/artifacts/53da4088-a175-4f0c-9e25-a4a371032a39
+
+This artifact contains a complete setup for deploying a distributed Pegasus/HTCondor infrastructure across FABRIC sites.
+
+### Option 2: Jupyter Examples Repository
+
+Use the Pegasus-FABRIC notebook from the official FABRIC Jupyter examples:
+
+**GitHub**: https://github.com/fabric-testbed/jupyter-examples/blob/f7be0c75f22544c72d7b3e3fa42bbdfd9d8bb841/fabric_examples/complex_recipes/pegasus/pegasus-fabric.ipynb
+
+### Cluster Architecture
+
+The notebook provisions:
+- **Submit Node**: Central Manager running HTCondor scheduler and Pegasus WMS
+- **Worker Nodes**: Distributed execution points across multiple FABRIC sites
+- **FABNetv4 Networking**: Private L3 network connecting all nodes
+
+### Setup Steps
+
+1. Log into the [FABRIC JupyterHub](https://jupyter.fabric-testbed.net/)
+2. Upload/clone the Pegasus-FABRIC notebook
+3. Configure your desired sites and node specifications
+4. Run the notebook to provision the cluster
+5. SSH to the submit node to run workflows
+
+Once your cluster is running, you can submit this workflow to it.
+
 ## Quick Start
 
 ### 1. Generate and Run Workflow
@@ -83,8 +120,8 @@ cd earthquake-workflow
 # Generate workflow for California earthquakes
 ./workflow_generator.py \
     --regions california \
-    --start-date 2024-01-01 \
-    --end-date 2024-01-31 \
+    --start-date 1994-01-01 \
+    --end-date 1994-01-31 \
     --min-magnitude 3.0 \
     -o workflow_california.yml
 

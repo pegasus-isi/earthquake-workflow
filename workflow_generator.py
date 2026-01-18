@@ -575,8 +575,8 @@ Available regions:
     parser.add_argument(
         "--min-magnitude",
         type=float,
-        default=4.0,
-        help="Minimum magnitude (default: 4.0)"
+        default=3.0,
+        help="Minimum magnitude (default: 3.0)"
     )
 
     # Clustering parameters
