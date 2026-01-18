@@ -528,6 +528,32 @@ earthquake-workflow/
 └── README.md                               # This file
 ```
 
+## Citation
+
+If you use this workflow in your research, please cite:
+
+```
+@misc{earthquake-workflow,
+  title={Earthquake/Seismic Data Workflow using Pegasus WMS},
+  year={2025},
+  publisher={GitHub},
+  url={https://github.com/pegasus-isi/earthquake-workflow}
+}
+```
+
+## License
+
+This workflow is released under the same license as the parent repository.
+
+## Contributing
+
+Contributions welcome! Please submit issues or pull requests for:
+- Additional data sources
+- New analysis methods
+- Performance improvements
+- Documentation enhancements
+
+
 ## Authors
 Komal Thareja (kthare10@renci.org)
 
