@@ -1,0 +1,127 @@
+{
+  "metadata": {
+    "generated_at": "2026-01-17T15:49:40.917363+00:00",
+    "total_events": 51,
+    "clustering_method": "dbscan",
+    "clustering_params": {
+      "eps_km": 50.0,
+      "min_samples": 10
+    },
+    "num_zones": 1,
+    "num_noise_events": 4
+  },
+  "zones": [
+    {
+      "zone_id": 0,
+      "num_events": 47,
+      "geographic_extent": {
+        "centroid": {
+          "latitude": 34.319276595744675,
+          "longitude": -118.55982978723402
+        },
+        "bounding_box": {
+          "min_latitude": 34.213,
+          "max_latitude": 34.394,
+          "min_longitude": -118.737,
+          "max_longitude": -118.428
+        },
+        "area_sq_km": 569.1346526877484
+      },
+      "magnitude_stats": {
+        "min": 4.0,
+        "max": 6.7,
+        "mean": 4.565531914893617,
+        "median": 4.44,
+        "std": 0.530392834361387,
+        "count_by_range": {
+          "3.0-3.9": 0,
+          "4.0-4.9": 39,
+          "5.0-5.9": 7,
+          "6.0+": 1
+        },
+        "b_value": {
+          "value": 0.705559649134215,
+          "std_error": 0.10291645222221973,
+          "magnitude_completeness": 4.0,
+          "n_events_used": 47
+        }
+      },
+      "depth_stats": {
+        "min_km": -0.844,
+        "max_km": 19.099,
+        "mean_km": 7.688234042553193,
+        "median_km": 6.024,
+        "std_km": 4.8588309168786585,
+        "classification": "shallow"
+      },
+      "temporal_stats": {
+        "first_event": "1994-01-17T12:30:55.390000+00:00",
+        "last_event": "1994-01-29T12:16:56.350000+00:00",
+        "duration_days": 11.99028888888889,
+        "events_per_day": 3.919838832536701
+      },
+      "event_density_per_1000_sq_km": 82.58151173547715,
+      "event_ids": [
+        "ci3144585",
+        "ci3149646",
+        "ci3144599",
+        "ci3144652",
+        "ci3144673",
+        "ci3144694",
+        "ci3140674",
+        "ci3140678",
+        "ci3140684",
+        "ci3140691",
+        "ci3140870",
+        "ci3140728",
+        "ci2138698",
+        "ci3140766",
+        "ci3140853",
+        "ci3141205",
+        "ci3141219",
+        "ci3141242",
+        "ci3141273",
+        "ci3141108",
+        "ci2150850",
+        "ci3141286",
+        "ci3141180",
+        "ci3141341",
+        "ci3141570",
+        "ci3141584",
+        "ci3141597",
+        "ci3142081",
+        "ci3142082",
+        "ci3142087",
+        "ci3142198",
+        "ci3142595",
+        "ci3142597",
+        "ci3145627",
+        "ci3159009",
+        "ci3143541",
+        "ci3143546",
+        "ci3143547",
+        "ci3187383",
+        "ci3144303",
+        "ci3145150",
+        "ci3145168",
+        "ci3145171",
+        "ci3146628",
+        "ci3146983",
+        "ci3147406",
+        "ci3147259"
+      ]
+    }
+  ],
+  "summary": {
+    "largest_zone": {
+      "zone_id": 0,
+      "num_events": 47
+    },
+    "smallest_zone": {
+      "zone_id": 0,
+      "num_events": 47
+    },
+    "avg_events_per_zone": 47.0,
+    "zones_with_large_events": 1
+  }
+}

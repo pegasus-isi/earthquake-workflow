@@ -256,6 +256,12 @@ pegasus-status <submit_dir>
                          (11 files per region)◄────────────────────┘
 ```
 
+### DAG Visualization
+
+The following diagram shows the workflow DAG for a single region:
+
+![Earthquake Workflow DAG](output/earth-workflow.png)
+
 ## Workflow Generator Options
 
 ```bash

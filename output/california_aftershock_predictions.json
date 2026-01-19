@@ -1,0 +1,284 @@
+{
+  "metadata": {
+    "generated_at": "2026-01-17T15:49:43.075752+00:00",
+    "analysis_version": "1.0",
+    "total_events_analyzed": 51,
+    "mainshocks_identified": 4,
+    "prediction_settings": {
+      "mainshock_threshold": 5.0,
+      "magnitude_thresholds": [
+        4.0,
+        5.0,
+        6.0
+      ],
+      "time_windows_days": [
+        1,
+        7,
+        30
+      ],
+      "statistical_model": "omori_utsu",
+      "ml_model": null
+    }
+  },
+  "mainshock_predictions": [
+    {
+      "mainshock_id": "ci3144585",
+      "mainshock_time": "1994-01-17T12:30:55.390000+00:00",
+      "mainshock_magnitude": 6.7,
+      "mainshock_depth_km": 18.202,
+      "mainshock_location": {
+        "latitude": 34.213,
+        "longitude": -118.537,
+        "place": "Northridge, California, earthquake"
+      },
+      "aftershock_zone": {
+        "radius_km": 48.87550515030131,
+        "area_km2": 7504.6836663999775
+      },
+      "predictions": {
+        "statistical": {
+          "omori_parameters": {
+            "K": 4897.788193684466,
+            "c": 0.05,
+            "p": 1.1
+          },
+          "expected_counts": {
+            "M>=4.0": {
+              "1_day": 8693.351159084536,
+              "7_day": 12928.884961083377,
+              "30_day": 15654.077681425219
+            },
+            "M>=5.0": {
+              "1_day": 869.3351159084536,
+              "7_day": 1292.8884961083377,
+              "30_day": 1565.407768142522
+            },
+            "M>=6.0": {
+              "1_day": 86.93351159084536,
+              "7_day": 129.28884961083378,
+              "30_day": 156.54077681425218
+            }
+          },
+          "probability": {
+            "M>=4.0_within_1_days": 0.99,
+            "M>=4.0_within_7_days": 0.99,
+            "M>=4.0_within_30_days": 0.99,
+            "M>=5.0_within_1_days": 0.99,
+            "M>=5.0_within_7_days": 0.99,
+            "M>=5.0_within_30_days": 0.99,
+            "M>=6.0_within_1_days": 0.99,
+            "M>=6.0_within_7_days": 0.99,
+            "M>=6.0_within_30_days": 0.99
+          },
+          "bath_law": {
+            "expected_largest_aftershock": 5.5,
+            "range": [
+              5.0,
+              6.0
+            ]
+          }
+        },
+        "combined": {
+          "probability_M5_7days": 0.99,
+          "risk_level": "high"
+        }
+      }
+    },
+    {
+      "mainshock_id": "ci3144694",
+      "mainshock_time": "1994-01-17T12:40:36.120000+00:00",
+      "mainshock_magnitude": 5.2,
+      "mainshock_depth_km": 5.395,
+      "mainshock_location": {
+        "latitude": 34.34,
+        "longitude": -118.614,
+        "place": "9km N of Chatsworth, California"
+      },
+      "aftershock_zone": {
+        "radius_km": 6.369293459194695,
+        "area_km2": 127.44781400197103
+      },
+      "predictions": {
+        "statistical": {
+          "omori_parameters": {
+            "K": 309.0295432513592,
+            "c": 0.05,
+            "p": 1.1
+          },
+          "expected_counts": {
+            "M>=4.0": {
+              "1_day": 17.345515958512397,
+              "7_day": 25.79651693741754,
+              "30_day": 31.233991273343147
+            },
+            "M>=5.0": {
+              "1_day": 1.7345515958512399,
+              "7_day": 2.579651693741754,
+              "30_day": 3.1233991273343142
+            },
+            "M>=6.0": {
+              "1_day": 0.173455159585124,
+              "7_day": 0.2579651693741754,
+              "30_day": 0.3123399127334315
+            }
+          },
+          "probability": {
+            "M>=4.0_within_1_days": 0.99,
+            "M>=4.0_within_7_days": 0.99,
+            "M>=4.0_within_30_days": 0.99,
+            "M>=5.0_within_1_days": 0.8235206833952924,
+            "M>=5.0_within_7_days": 0.9241995988204604,
+            "M>=5.0_within_30_days": 0.955992672609846,
+            "M>=6.0_within_1_days": 0.1592451498870553,
+            "M>=6.0_within_7_days": 0.22737785744897754,
+            "M>=6.0_within_30_days": 0.2682672393317429
+          },
+          "bath_law": {
+            "expected_largest_aftershock": 4.0,
+            "range": [
+              3.5,
+              4.5
+            ]
+          }
+        },
+        "combined": {
+          "probability_M5_7days": 0.9241995988204604,
+          "risk_level": "high"
+        }
+      }
+    },
+    {
+      "mainshock_id": "ci3141273",
+      "mainshock_time": "1994-01-17T23:33:30.690000+00:00",
+      "mainshock_magnitude": 5.58,
+      "mainshock_depth_km": 9.083,
+      "mainshock_location": {
+        "latitude": 34.326,
+        "longitude": -118.698,
+        "place": "7km NNE of Simi Valley, California"
+      },
+      "aftershock_zone": {
+        "radius_km": 10.6731167251115,
+        "area_km2": 357.87584857505993
+      },
+      "predictions": {
+        "statistical": {
+          "omori_parameters": {
+            "K": 622.3002851691601,
+            "c": 0.05,
+            "p": 1.1
+          },
+          "expected_counts": {
+            "M>=4.0": {
+              "1_day": 83.78904159680759,
+              "7_day": 124.61234568587626,
+              "30_day": 150.87854407421855
+            },
+            "M>=5.0": {
+              "1_day": 8.37890415968076,
+              "7_day": 12.461234568587628,
+              "30_day": 15.087854407421856
+            },
+            "M>=6.0": {
+              "1_day": 0.8378904159680759,
+              "7_day": 1.2461234568587627,
+              "30_day": 1.5087854407421855
+            }
+          },
+          "probability": {
+            "M>=4.0_within_1_days": 0.99,
+            "M>=4.0_within_7_days": 0.99,
+            "M>=4.0_within_30_days": 0.99,
+            "M>=5.0_within_1_days": 0.99,
+            "M>=5.0_within_7_days": 0.99,
+            "M>=5.0_within_30_days": 0.99,
+            "M>=6.0_within_1_days": 0.5673777856380753,
+            "M>=6.0_within_7_days": 0.7123823994123438,
+            "M>=6.0_within_30_days": 0.7788215507776217
+          },
+          "bath_law": {
+            "expected_largest_aftershock": 4.38,
+            "range": [
+              3.88,
+              4.88
+            ]
+          }
+        },
+        "combined": {
+          "probability_M5_7days": 0.99,
+          "risk_level": "high"
+        }
+      }
+    },
+    {
+      "mainshock_id": "ci3147406",
+      "mainshock_time": "1994-01-29T11:20:35.970000+00:00",
+      "mainshock_magnitude": 5.06,
+      "mainshock_depth_km": 0.607,
+      "mainshock_location": {
+        "latitude": 34.306,
+        "longitude": -118.579,
+        "place": "6km NNE of Chatsworth, California"
+      },
+      "aftershock_zone": {
+        "radius_km": 5.266126157772452,
+        "area_km2": 87.12291359233143
+      },
+      "predictions": {
+        "statistical": {
+          "omori_parameters": {
+            "K": 238.78112829131783,
+            "c": 0.05,
+            "p": 1.1
+          },
+          "expected_counts": {
+            "M>=4.0": {
+              "1_day": 35.11438175990671,
+              "7_day": 52.222646243730736,
+              "30_day": 63.2303066729776
+            },
+            "M>=5.0": {
+              "1_day": 6.811886441770144,
+              "7_day": 10.13074182348848,
+              "30_day": 12.266132768039048
+            },
+            "M>=6.0": {
+              "1_day": 1.3214470701162426,
+              "7_day": 1.9652763173888306,
+              "30_day": 2.3795236967822877
+            }
+          },
+          "probability": {
+            "M>=4.0_within_1_days": 0.99,
+            "M>=4.0_within_7_days": 0.99,
+            "M>=4.0_within_30_days": 0.99,
+            "M>=5.0_within_1_days": 0.99,
+            "M>=5.0_within_7_days": 0.99,
+            "M>=5.0_within_30_days": 0.99,
+            "M>=6.0_within_1_days": 0.733250981989227,
+            "M>=6.0_within_7_days": 0.8598828355427544,
+            "M>=6.0_within_30_days": 0.9074053298518884
+          },
+          "bath_law": {
+            "expected_largest_aftershock": 3.8599999999999994,
+            "range": [
+              3.3599999999999994,
+              4.359999999999999
+            ]
+          }
+        },
+        "combined": {
+          "probability_M5_7days": 0.99,
+          "risk_level": "high"
+        }
+      }
+    }
+  ],
+  "summary": {
+    "total_mainshocks": 4,
+    "high_risk_mainshocks": 4,
+    "moderate_risk_mainshocks": 0,
+    "low_risk_mainshocks": 0,
+    "average_m5_probability": 0.9735498997051151
+  }
+}

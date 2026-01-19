@@ -1,0 +1,215 @@
+{
+  "metadata": {
+    "generated_at": "2026-01-17T15:53:53.440704Z",
+    "total_events": 51,
+    "analysis_version": "1.0"
+  },
+  "swarms": [
+    {
+      "swarm_id": 1,
+      "start_time": "1994-01-17T12:30:55.390000+00:00",
+      "end_time": "1994-01-18T11:35:09.900000+00:00",
+      "duration_hours": 23.070697222222222,
+      "num_events": 25,
+      "center_latitude": 34.312000000000005,
+      "center_longitude": -118.55824000000001,
+      "magnitude_range": {
+        "min": 4.04,
+        "max": 6.7,
+        "mean": 4.6784
+      },
+      "depth_range_km": {
+        "min": -0.844,
+        "max": 19.099,
+        "mean": 7.512600000000001
+      },
+      "event_ids": [
+        "ci3144585",
+        "ci3149646",
+        "ci3144599",
+        "ci3144652",
+        "ci3144673",
+        "ci3144694",
+        "ci3140674",
+        "ci3140678",
+        "ci3140684",
+        "ci3140691",
+        "ci3140870",
+        "ci3140728",
+        "ci2138698",
+        "ci3140766",
+        "ci3140853",
+        "ci3141205",
+        "ci3141219",
+        "ci3141242",
+        "ci3141273",
+        "ci3141108",
+        "ci2150850",
+        "ci3141286",
+        "ci3141180",
+        "ci3141341",
+        "ci3141570"
+      ]
+    }
+  ],
+  "mainshock_aftershock_sequences": [
+    {
+      "mainshock_id": "ci3144585",
+      "mainshock_time": "1994-01-17T12:30:55.390000+00:00",
+      "mainshock_magnitude": 6.7,
+      "mainshock_latitude": 34.213,
+      "mainshock_longitude": -118.537,
+      "mainshock_depth_km": 18.202,
+      "num_aftershocks": 46,
+      "aftershock_duration_days": 11.99028888888889,
+      "largest_aftershock_magnitude": 5.89,
+      "aftershock_magnitude_range": {
+        "min": 4.0,
+        "max": 5.89,
+        "mean": 4.519130434782609
+      },
+      "aftershock_rate_decay": {
+        "first_day": 24,
+        "first_week": 42,
+        "first_month": 46
+      }
+    },
+    {
+      "mainshock_id": "ci3149646",
+      "mainshock_time": "1994-01-17T12:31:58.120000+00:00",
+      "mainshock_magnitude": 5.89,
+      "mainshock_latitude": 34.275,
+      "mainshock_longitude": -118.493,
+      "mainshock_depth_km": 5.317,
+      "num_aftershocks": 45,
+      "aftershock_duration_days": 11.989562847222222,
+      "largest_aftershock_magnitude": 5.58,
+      "aftershock_magnitude_range": {
+        "min": 4.0,
+        "max": 5.58,
+        "mean": 4.488666666666667
+      },
+      "aftershock_rate_decay": {
+        "first_day": 23,
+        "first_week": 41,
+        "first_month": 45
+      }
+    },
+    {
+      "mainshock_id": "ci3144694",
+      "mainshock_time": "1994-01-17T12:40:36.120000+00:00",
+      "mainshock_magnitude": 5.2,
+      "mainshock_latitude": 34.34,
+      "mainshock_longitude": -118.614,
+      "mainshock_depth_km": 5.395,
+      "num_aftershocks": 39,
+      "aftershock_duration_days": 11.983567476851851,
+      "largest_aftershock_magnitude": 5.07,
+      "aftershock_magnitude_range": {
+        "min": 4.0,
+        "max": 5.07,
+        "mean": 4.405641025641026
+      },
+      "aftershock_rate_decay": {
+        "first_day": 17,
+        "first_week": 35,
+        "first_month": 39
+      }
+    },
+    {
+      "mainshock_id": "ci3141273",
+      "mainshock_time": "1994-01-17T23:33:30.690000+00:00",
+      "mainshock_magnitude": 5.58,
+      "mainshock_latitude": 34.326,
+      "mainshock_longitude": -118.698,
+      "mainshock_depth_km": 9.083,
+      "num_aftershocks": 28,
+      "aftershock_duration_days": 11.530158101851852,
+      "largest_aftershock_magnitude": 5.24,
+      "aftershock_magnitude_range": {
+        "min": 4.0,
+        "max": 5.24,
+        "mean": 4.427142857142857
+      },
+      "aftershock_rate_decay": {
+        "first_day": 8,
+        "first_week": 24,
+        "first_month": 28
+      }
+    },
+    {
+      "mainshock_id": "ci3141286",
+      "mainshock_time": "1994-01-18T00:43:08.890000+00:00",
+      "mainshock_magnitude": 5.24,
+      "mainshock_latitude": 34.377,
+      "mainshock_longitude": -118.698,
+      "mainshock_depth_km": 10.709,
+      "num_aftershocks": 25,
+      "aftershock_duration_days": 11.481799305555555,
+      "largest_aftershock_magnitude": 5.07,
+      "aftershock_magnitude_range": {
+        "min": 4.0,
+        "max": 5.07,
+        "mean": 4.4044
+      },
+      "aftershock_rate_decay": {
+        "first_day": 5,
+        "first_week": 21,
+        "first_month": 25
+      }
+    },
+    {
+      "mainshock_id": "ci3142595",
+      "mainshock_time": "1994-01-19T21:09:28.610000+00:00",
+      "mainshock_magnitude": 5.06,
+      "mainshock_latitude": 34.379,
+      "mainshock_longitude": -118.712,
+      "mainshock_depth_km": 13.797,
+      "num_aftershocks": 13,
+      "aftershock_duration_days": 9.630182175925926,
+      "largest_aftershock_magnitude": 4.64,
+      "aftershock_magnitude_range": {
+        "min": 4.0,
+        "max": 4.64,
+        "mean": 4.332307692307692
+      },
+      "aftershock_rate_decay": {
+        "first_day": 0,
+        "first_week": 10,
+        "first_month": 13
+      }
+    },
+    {
+      "mainshock_id": "ci3142597",
+      "mainshock_time": "1994-01-19T21:11:44.900000+00:00",
+      "mainshock_magnitude": 5.07,
+      "mainshock_latitude": 34.378,
+      "mainshock_longitude": -118.619,
+      "mainshock_depth_km": 10.83,
+      "num_aftershocks": 14,
+      "aftershock_duration_days": 9.62860474537037,
+      "largest_aftershock_magnitude": 5.06,
+      "aftershock_magnitude_range": {
+        "min": 4.0,
+        "max": 5.06,
+        "mean": 4.384285714285714
+      },
+      "aftershock_rate_decay": {
+        "first_day": 0,
+        "first_week": 10,
+        "first_month": 14
+      }
+    }
+  ],
+  "magnitude_anomalies": [],
+  "rate_changes": [],
+  "depth_anomalies": [],
+  "summary": {
+    "total_swarms": 1,
+    "total_sequences": 7,
+    "total_magnitude_anomalies": 0,
+    "total_rate_changes": 0,
+    "total_depth_anomalies": 0,
+    "total_anomalous_events": 0
+  }
+}

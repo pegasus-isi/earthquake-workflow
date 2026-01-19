@@ -1,0 +1,198 @@
+{
+  "metadata": {
+    "generated_at": "2026-01-17T15:49:43.005198Z",
+    "total_events": 51,
+    "analysis_version": "1.0"
+  },
+  "magnitude_distribution": {
+    "count": 51,
+    "min": 4.0,
+    "max": 6.7,
+    "mean": 4.538039215686275,
+    "median": 4.4,
+    "std": 0.518540334430575,
+    "quartiles": {
+      "q25": 4.2,
+      "q50": 4.4,
+      "q75": 4.75
+    },
+    "histogram": {
+      "bins": [
+        4.0,
+        4.5,
+        5.0,
+        5.5,
+        6.0,
+        6.5,
+        7.0
+      ],
+      "counts": [
+        30,
+        13,
+        5,
+        2,
+        0,
+        1
+      ]
+    },
+    "gutenberg_richter": {
+      "b_value": 0.7449749993409965,
+      "a_value": 4.621750438745577,
+      "r_squared": 0.9589444622849557,
+      "p_value": 7.485006546477593e-19,
+      "std_error": 0.03082909944599309,
+      "interpretation": "Induced seismicity"
+    },
+    "magnitude_categories": {
+      "micro (M<3.0)": 0,
+      "minor (3.0\u2264M<4.0)": 0,
+      "light (4.0\u2264M<5.0)": 43,
+      "moderate (5.0\u2264M<6.0)": 7,
+      "strong (6.0\u2264M<7.0)": 1,
+      "major (7.0\u2264M<8.0)": 0,
+      "great (M\u22658.0)": 0
+    }
+  },
+  "depth_profile": {
+    "count": 51,
+    "min": -0.844,
+    "max": 21.712,
+    "mean": 8.28929411764706,
+    "median": 6.969,
+    "std": 5.232564015066104,
+    "quartiles": {
+      "q25": 5.491,
+      "q50": 6.969,
+      "q75": 11.7425
+    },
+    "depth_categories": {
+      "shallow (0-70 km)": 50,
+      "intermediate (70-300 km)": 0,
+      "deep (>300 km)": 0
+    },
+    "histogram": {
+      "bins": [
+        0,
+        10,
+        20,
+        40,
+        70,
+        150,
+        300,
+        700
+      ],
+      "counts": [
+        30,
+        19,
+        1,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    "magnitude_correlation": {
+      "coefficient": 0.14093724367227498,
+      "p_value": 0.32389948286739506,
+      "significant": false
+    }
+  },
+  "temporal_patterns": {
+    "date_range": {
+      "start": "1994-01-11T10:53:52.340000+00:00",
+      "end": "1994-01-29T12:16:56.350000+00:00",
+      "duration_days": 18.057685300925925
+    },
+    "total_events": 51,
+    "daily_rate": {
+      "mean": 4.25,
+      "median": 2.0,
+      "std": 5.47929988892078,
+      "min": 1,
+      "max": 20
+    },
+    "hourly_distribution": {
+      "0": 3,
+      "4": 4,
+      "5": 2,
+      "7": 1,
+      "8": 1,
+      "9": 1,
+      "10": 1,
+      "11": 2,
+      "12": 8,
+      "13": 4,
+      "14": 3,
+      "15": 6,
+      "17": 2,
+      "18": 5,
+      "19": 1,
+      "20": 2,
+      "21": 2,
+      "22": 2,
+      "23": 1
+    },
+    "day_of_week_distribution": {
+      "0": 23,
+      "1": 9,
+      "2": 6,
+      "3": 3,
+      "4": 6,
+      "5": 3,
+      "6": 1
+    },
+    "temporal_trend": {
+      "events_per_day": 3.640022609987343,
+      "r_squared": 0.7406527568255503,
+      "p_value": 5.714585448177136e-16,
+      "trend": "increasing"
+    },
+    "inter_event_time_hours": {
+      "mean": 8.667688944444446,
+      "median": 0.9829638888888889,
+      "std": 23.913636167039286,
+      "min": 0.007388888888888889,
+      "max": 145.61751388888888
+    }
+  },
+  "spatial_distribution": {
+    "count": 51,
+    "latitude": {
+      "min": 34.213,
+      "max": 40.5131667,
+      "mean": 34.70216666666666,
+      "std": 1.3885999256035637
+    },
+    "longitude": {
+      "min": -124.828,
+      "max": -118.428,
+      "mean": -118.94301960784313,
+      "std": 1.384869533567476
+    },
+    "geographic_extent": {
+      "latitude_range_degrees": 6.300166699999998,
+      "longitude_range_degrees": 6.400000000000006,
+      "approximate_area_km2": 496795.86502848036
+    },
+    "spatial_clustering": {
+      "total_grid_cells": 400,
+      "occupied_cells": 4,
+      "hotspot_cells": 1,
+      "concentration_ratio": 0.0025
+    }
+  },
+  "event_types": {
+    "total": 51,
+    "types": {
+      "earthquake": 51
+    },
+    "tsunami_events": 0,
+    "tsunami_percentage": 0.0,
+    "significance": {
+      "mean": 337.4901960784314,
+      "median": 298.0,
+      "max": 1541.0,
+      "high_significance_count": 1
+    }
+  }
+}

@@ -1,0 +1,67 @@
+{
+  "metadata": {
+    "generated_at": "2026-01-17T15:50:25.203779+00:00",
+    "analysis_version": "1.0",
+    "historical_period": {
+      "start": "1994-01-11T12:16:56.350000+00:00",
+      "end": "1994-01-20T12:16:56.350000+00:00",
+      "years": 0.024640657084188913,
+      "n_events": 34
+    },
+    "recent_period": {
+      "start": "1994-01-20T12:16:56.350000+00:00",
+      "end": "1994-01-29T12:16:56.350000+00:00",
+      "years": 0.024640657084188913,
+      "n_events": 16
+    },
+    "grid_resolution_deg": 0.5,
+    "rate_threshold": 0.3,
+    "min_significance": 0.9,
+    "min_historical_events": 5,
+    "min_magnitude": 3.0,
+    "total_events_analyzed": 51,
+    "analysis_bounds": {
+      "min_lat": 34.213,
+      "max_lat": 40.5131667,
+      "min_lon": -124.828,
+      "max_lon": -118.428
+    }
+  },
+  "seismic_gaps": [],
+  "grid_analysis": [
+    {
+      "lat": 34.213,
+      "lon": -118.828,
+      "lat_center": 34.463,
+      "lon_center": -118.578,
+      "area_sq_km": 2539.640823659692,
+      "historical_count": 33,
+      "recent_count": 14,
+      "historical_rate": 1339.25,
+      "recent_rate": 568.1666666666666,
+      "rate_ratio": 0.4242424242424242,
+      "significance": 0.9998368583643015,
+      "p_value": 0.00016314163569852713,
+      "is_gap": false,
+      "historical_max_magnitude": 6.7,
+      "historical_mean_magnitude": 4.642424242424242,
+      "days_since_last_m5": 11676,
+      "moment_deficit_nm": 7.083290059084354e+19,
+      "potential_magnitude": 7.166823350947197,
+      "historical_b_value": 0.6272086609543689,
+      "recent_b_value": 1.0,
+      "risk_score": 0.8289149226940391,
+      "risk_level": "not_gap"
+    }
+  ],
+  "summary": {
+    "total_gaps": 0,
+    "high_risk_gaps": 0,
+    "critical_gaps": 0,
+    "total_gap_area_sq_km": 0.0,
+    "max_potential_magnitude": 0.0,
+    "total_cells_analyzed": 1,
+    "gap_cells_identified": 0,
+    "overall_rate_change": 1.8823529411764708
+  }
+}
