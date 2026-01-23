@@ -534,6 +534,22 @@ earthquake-workflow/
 └── README.md                               # This file
 ```
 
+## AI Interactions
+
+This workflow was developed collaboratively with Claude. Below are the key prompts used during development.
+
+**Initial Setup:**
+- "I need to build a workflow for earthquake analysis. Can you help me find a free data source?"
+- "Can you build the workflow use soil moisture as the base, using https://earthquake.usgs.gov/fdsnws/event/1/ as the data source?"
+
+
+**Feature Development:**
+- "Help me add ML-based prediction to the earthquake workflow."
+- "Can we visualize these predictions?"
+
+**Debugging and Fixes:**
+- "Please check the file `earthquake-workflow/output/indonesia_aftershock_visualization.png` and identify the issue in the visualization."
+
 ## Citation
 
 If you use this workflow in your research, please cite:
