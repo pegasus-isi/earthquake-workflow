@@ -73,42 +73,41 @@ This workflow fetches, analyzes, and visualizes earthquake data from the USGS FD
   - Parallel job execution
   - 11-step analysis pipeline
 
-## Prerequisites: Pegasus/HTCondor Cluster
+## Running on ACCESS
 
-Before running this workflow, you need a Pegasus/HTCondor cluster. This cluster can be deployed on any infrastructure that supports HTCondor and Pegasus WMS, including cloud providers (AWS, GCP, Azure), on-premises clusters, or research testbeds.
+The easiest way to run this workflow is using the provided Jupyter notebook on an ACCESS resource with Pegasus and HTCondor pre-configured:
 
-Below we provide an example of how to deploy the cluster on the [FABRIC testbed](https://fabric-testbed.net/):
+**Notebook**: [`Access-Earthquake-workflow.ipynb`](Access-Earthquake-workflow.ipynb)
 
-### Option 1: FABRIC Artifact (Recommended)
+The notebook walks through the complete workflow: configuring parameters, generating the Pegasus DAG, submitting to HTCondor, monitoring execution, and examining results with inline visualizations.
 
-Download and run the pre-configured Pegasus-FABRIC notebook from the FABRIC Artifacts repository:
+## Running on FABRIC
 
-**Artifact URL**: https://artifacts.fabric-testbed.net/artifacts/53da4088-a175-4f0c-9e25-a4a371032a39
+The workflow can also be run on the [FABRIC testbed](https://fabric-testbed.net/) by deploying a distributed Pegasus/HTCondor cluster across FABRIC sites.
 
-This artifact contains a complete setup for deploying a distributed Pegasus/HTCondor infrastructure across FABRIC sites.
+### Deploy a Pegasus/HTCondor Cluster
 
-### Option 2: Jupyter Examples Repository
+You can provision a cluster using either of the following notebooks:
 
-Use the Pegasus-FABRIC notebook from the official FABRIC Jupyter examples:
+| Option | Link | Description |
+|--------|------|-------------|
+| FABRIC Artifact (Recommended) | [Pegasus-FABRIC Artifact](https://artifacts.fabric-testbed.net/artifacts/53da4088-a175-4f0c-9e25-a4a371032a39) | Pre-configured notebook from the FABRIC Artifacts repository |
+| Jupyter Examples | [pegasus-fabric.ipynb](https://github.com/fabric-testbed/jupyter-examples/blob/f7be0c75f22544c72d7b3e3fa42bbdfd9d8bb841/fabric_examples/complex_recipes/pegasus/pegasus-fabric.ipynb) | Notebook from the official FABRIC Jupyter examples |
 
-**GitHub**: https://github.com/fabric-testbed/jupyter-examples/blob/f7be0c75f22544c72d7b3e3fa42bbdfd9d8bb841/fabric_examples/complex_recipes/pegasus/pegasus-fabric.ipynb
+Both notebooks provision the following cluster architecture:
 
-### Cluster Architecture
-
-The notebook provisions:
-- **Submit Node**: Central Manager running HTCondor scheduler and Pegasus WMS
-- **Worker Nodes**: Distributed execution points across multiple FABRIC sites
-- **FABNetv4 Networking**: Private L3 network connecting all nodes
+- **Submit Node** -- Central Manager running HTCondor scheduler and Pegasus WMS
+- **Worker Nodes** -- Distributed execution points across multiple FABRIC sites
+- **FABNetv4 Networking** -- Private L3 network connecting all nodes
 
 ### Setup Steps
 
 1. Log into the [FABRIC JupyterHub](https://jupyter.fabric-testbed.net/)
-2. Upload/clone the Pegasus-FABRIC notebook
+2. Upload or clone one of the Pegasus-FABRIC notebooks above
 3. Configure your desired sites and node specifications
 4. Run the notebook to provision the cluster
-5. SSH to the submit node to run workflows
-
-Once your cluster is running, you can submit this workflow to it.
+5. Clone this repository on the submit node
+6. Run the workflow using the CLI or the [Access notebook](Access-Earthquake-workflow.ipynb)
 
 ## Quick Start
 
@@ -260,7 +259,7 @@ pegasus-status <submit_dir>
 
 The following diagram shows the workflow DAG for a single region:
 
-![Earthquake Workflow DAG](output/earth-workflow.png)
+![Earthquake Workflow DAG](images/earth-workflow.png)
 
 ## Workflow Generator Options
 
