@@ -289,7 +289,7 @@ def detect_rate_changes(df: pd.DataFrame, window_hours: int = 24,
     df = df.sort_values('time')
 
     # Calculate hourly event counts
-    df['hour'] = df['time'].dt.floor('H')
+    df['hour'] = df['time'].dt.floor('h')
     hourly_counts = df.groupby('hour').size()
 
     # Calculate rolling baseline

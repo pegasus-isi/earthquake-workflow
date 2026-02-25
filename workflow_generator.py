@@ -79,12 +79,15 @@ class EarthquakeWorkflow:
         self.tc.write()
         self.wf.write(file=self.dagfile)
 
-    def create_pegasus_properties(self):
+    def create_pegasus_properties(self, local_mode=False):
         """Create Pegasus properties configuration."""
         self.props = Properties()
         self.props["pegasus.transfer.threads"] = "16"
+        if local_mode:
+            # sharedfs: all jobs share the same filesystem, no staging needed
+            self.props["pegasus.data.configuration"] = "sharedfs"
 
-    def create_sites_catalog(self, exec_site_name="condorpool"):
+    def create_sites_catalog(self, exec_site_name="condorpool", local_mode=False):
         """Create site catalog."""
         logger.info(f"Creating site catalog for execution site: {exec_site_name}")
         self.sc = SiteCatalog()
@@ -102,120 +105,79 @@ class EarthquakeWorkflow:
             ),
         )
 
-        exec_site = (
-            Site(exec_site_name)
-            .add_condor_profile(universe="vanilla")
-            .add_pegasus_profile(style="condor")
-        )
+        exec_site = Site(exec_site_name).add_pegasus_profile(style="condor")
+        exec_site.add_condor_profile(universe="vanilla")
+        if local_mode:
+            # sharedfs requires the execution site to declare its scratch directory.
+            # Since all jobs run on the same machine, point to the same path as local.
+            exec_site.add_directories(
+                Directory(
+                    Directory.SHARED_SCRATCH, self.shared_scratch_dir
+                ).add_file_servers(
+                    FileServer("file://" + self.shared_scratch_dir, Operation.ALL)
+                )
+            )
+            # Pegasus needs PEGASUS_HOME on the execution site to locate its own
+            # internal tools (pegasus-kickstart, pegasus-transfer, etc.).
+            # Derive it from the pegasus-plan binary already on PATH.
+            import shutil
+            pegasus_bin = shutil.which("pegasus-plan")
+            if pegasus_bin is None:
+                raise RuntimeError(
+                    "pegasus-plan not found on PATH. "
+                    "Activate the venv and/or source condor.sh before running."
+                )
+            pegasus_home = str(Path(pegasus_bin).resolve().parent.parent)
+            logger.info(f"Detected PEGASUS_HOME={pegasus_home}")
+            exec_site.add_profiles(Namespace.ENV, PEGASUS_HOME=pegasus_home)
+            # getenv=True: worker slots inherit the submitter's PATH and active
+            # Python venv so the bin/ scripts find their dependencies.
+            # getenv is not in add_condor_profile's whitelist, so use add_profiles.
+            exec_site.add_profiles(Namespace.CONDOR, key="getenv", value="True")
 
         self.sc.add_sites(local, exec_site)
 
-    def create_transformation_catalog(self, exec_site_name="condorpool"):
+    def create_transformation_catalog(self, exec_site_name="condorpool", local_mode=False):
         """Create transformation catalog with executables and containers."""
         logger.info("Creating transformation catalog")
         self.tc = TransformationCatalog()
 
-        # Container - use Singularity with docker:// URL
-        earthquake_container = Container(
-            "earthquake_container",
-            container_type=Container.SINGULARITY,
-            image="docker://kthare10/earthquake-analysis:latest",
-            image_site="docker_hub",
-        )
+        # Container - use Singularity with docker:// URL (skipped in local mode)
+        earthquake_container = None
+        if not local_mode:
+            earthquake_container = Container(
+                "earthquake_container",
+                container_type=Container.SINGULARITY,
+                image="docker://kthare10/earthquake-analysis:latest",
+                image_site="docker_hub",
+            )
+
+        def _make_t(name, memory="2 GB"):
+            """Build a Transformation, attaching the container only when available."""
+            kwargs = {} if local_mode else {"container": earthquake_container}
+            return Transformation(
+                name,
+                site=exec_site_name,
+                pfn=os.path.join(self.wf_dir, f"bin/{name}.py"),
+                is_stageable=True,
+                **kwargs,
+            ).add_pegasus_profile(memory=memory)
 
         # Add transformations
-        fetch_earthquake_data = Transformation(
-            "fetch_earthquake_data",
-            site=exec_site_name,
-            pfn=os.path.join(self.wf_dir, "bin/fetch_earthquake_data.py"),
-            is_stageable=True,
-            container=earthquake_container,
-        ).add_pegasus_profile(memory="2 GB")
+        fetch_earthquake_data             = _make_t("fetch_earthquake_data")
+        analyze_seismic_patterns          = _make_t("analyze_seismic_patterns")
+        visualize_earthquakes             = _make_t("visualize_earthquakes")
+        detect_seismic_anomalies          = _make_t("detect_seismic_anomalies")
+        cluster_seismic_zones             = _make_t("cluster_seismic_zones")
+        predict_aftershocks               = _make_t("predict_aftershocks", memory="4 GB")
+        visualize_aftershock_predictions  = _make_t("visualize_aftershock_predictions")
+        assess_seismic_hazard             = _make_t("assess_seismic_hazard")
+        analyze_seismic_gaps              = _make_t("analyze_seismic_gaps")
+        visualize_seismic_hazard          = _make_t("visualize_seismic_hazard")
+        visualize_seismic_gaps            = _make_t("visualize_seismic_gaps")
 
-        analyze_seismic_patterns = Transformation(
-            "analyze_seismic_patterns",
-            site=exec_site_name,
-            pfn=os.path.join(self.wf_dir, "bin/analyze_seismic_patterns.py"),
-            is_stageable=True,
-            container=earthquake_container,
-        ).add_pegasus_profile(memory="2 GB")
-
-        visualize_earthquakes = Transformation(
-            "visualize_earthquakes",
-            site=exec_site_name,
-            pfn=os.path.join(self.wf_dir, "bin/visualize_earthquakes.py"),
-            is_stageable=True,
-            container=earthquake_container,
-        ).add_pegasus_profile(memory="2 GB")
-
-        detect_seismic_anomalies = Transformation(
-            "detect_seismic_anomalies",
-            site=exec_site_name,
-            pfn=os.path.join(self.wf_dir, "bin/detect_seismic_anomalies.py"),
-            is_stageable=True,
-            container=earthquake_container,
-        ).add_pegasus_profile(memory="2 GB")
-
-        cluster_seismic_zones = Transformation(
-            "cluster_seismic_zones",
-            site=exec_site_name,
-            pfn=os.path.join(self.wf_dir, "bin/cluster_seismic_zones.py"),
-            is_stageable=True,
-            container=earthquake_container,
-        ).add_pegasus_profile(memory="2 GB")
-
-        predict_aftershocks = Transformation(
-            "predict_aftershocks",
-            site=exec_site_name,
-            pfn=os.path.join(self.wf_dir, "bin/predict_aftershocks.py"),
-            is_stageable=True,
-            container=earthquake_container,
-        ).add_pegasus_profile(memory="4 GB")
-
-        visualize_aftershock_predictions = Transformation(
-            "visualize_aftershock_predictions",
-            site=exec_site_name,
-            pfn=os.path.join(self.wf_dir, "bin/visualize_aftershock_predictions.py"),
-            is_stageable=True,
-            container=earthquake_container,
-        ).add_pegasus_profile(memory="2 GB")
-
-        assess_seismic_hazard = Transformation(
-            "assess_seismic_hazard",
-            site=exec_site_name,
-            pfn=os.path.join(self.wf_dir, "bin/assess_seismic_hazard.py"),
-            is_stageable=True,
-            container=earthquake_container,
-        ).add_pegasus_profile(memory="2 GB")
-
-        analyze_seismic_gaps = Transformation(
-            "analyze_seismic_gaps",
-            site=exec_site_name,
-            pfn=os.path.join(self.wf_dir, "bin/analyze_seismic_gaps.py"),
-            is_stageable=True,
-            container=earthquake_container,
-        ).add_pegasus_profile(memory="2 GB")
-
-
-        visualize_seismic_hazard = Transformation(
-            "visualize_seismic_hazard",
-            site=exec_site_name,
-            pfn=os.path.join(self.wf_dir, "bin/visualize_seismic_hazard.py"),
-            is_stageable=True,
-            container=earthquake_container,
-        ).add_pegasus_profile(memory="2 GB")
-
-
-        visualize_seismic_gaps = Transformation(
-            "visualize_seismic_gaps",
-            site=exec_site_name,
-            pfn=os.path.join(self.wf_dir, "bin/visualize_seismic_gaps.py"),
-            is_stageable=True,
-            container=earthquake_container,
-        ).add_pegasus_profile(memory="2 GB")
-
-
-        self.tc.add_containers(earthquake_container)
+        if earthquake_container:
+            self.tc.add_containers(earthquake_container)
         self.tc.add_transformations(
             fetch_earthquake_data,
             analyze_seismic_patterns,
@@ -656,6 +618,13 @@ Available regions:
         help="Rate ratio threshold for gap detection (default: 0.3)"
     )
 
+    parser.add_argument(
+        "--local",
+        action="store_true",
+        help="Run locally without containers (macOS / systems without Singularity). "
+             "Uses HTCondor local universe and sharedfs data configuration.",
+    )
+
     args = parser.parse_args()
 
     # Parse dates
@@ -685,6 +654,7 @@ Available regions:
     logger.info(f"Gap analysis: historical={args.gap_historical_years}yr, recent={args.gap_recent_years}yr")
     logger.info(f"Execution site: {args.execution_site_name}")
     logger.info(f"Output file: {args.output}")
+    logger.info(f"Local mode (no container): {args.local}")
     logger.info("=" * 70)
 
     try:
@@ -693,13 +663,13 @@ Available regions:
 
         if not args.skip_sites_catalog:
             logger.info("Creating execution sites...")
-            workflow.create_sites_catalog(args.execution_site_name)
+            workflow.create_sites_catalog(args.execution_site_name, local_mode=args.local)
 
         logger.info("Creating workflow properties...")
-        workflow.create_pegasus_properties()
+        workflow.create_pegasus_properties(local_mode=args.local)
 
         logger.info("Creating transformation catalog...")
-        workflow.create_transformation_catalog(args.execution_site_name)
+        workflow.create_transformation_catalog(args.execution_site_name, local_mode=args.local)
 
         logger.info("Creating replica catalog...")
         workflow.create_replica_catalog()

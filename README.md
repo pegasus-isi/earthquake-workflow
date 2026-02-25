@@ -204,6 +204,61 @@ pegasus-status <submit_dir>
     --output california_gaps_viz.png
 ```
 
+## Running Locally on macOS
+
+macOS does not support Singularity/Apptainer, which the workflow uses by default on Linux clusters. The `--local` flag generates a container-free workflow that runs on a local HTCondor installation.
+
+**What `--local` changes in the generated catalogs:**
+
+| Catalog | Default (cluster) | `--local` (macOS) |
+|---------|-------------------|-------------------|
+| `transformations.yml` | All transformations include `container: earthquake_container` (Singularity) | No container — scripts run with the local Python environment |
+| `sites.yml` | `condorpool` site: `universe: vanilla` only | Adds `getenv: 'True'` (inherits submitter's `PATH` and venv) and a `sharedScratch` directory |
+| `pegasus.properties` | Transfer threads only | Adds `pegasus.data.configuration = sharedfs` (no file staging needed on a single machine) |
+
+### Setup
+
+```bash
+# 1. Set up environment (once per shell session)
+. ~/condor/condor.sh           # sets CONDOR_CONFIG, adds condor bin/sbin to PATH
+source .venv/bin/activate      # activates the Python venv (run `uv sync` first if needed)
+
+# 2. Confirm HTCondor is running
+condor_status
+
+# 3. Create output directory on first run
+mkdir -p output
+```
+
+### Generate and Submit
+
+```bash
+./workflow_generator.py \
+    --regions california \
+    --start-date 1994-01-01 \
+    --end-date 1994-01-31 \
+    --min-magnitude 3.0 \
+    --local \
+    -o workflow.yml
+
+pegasus-plan \
+    --submit \
+    --sites condorpool \
+    --output-sites local \
+    --dir submit \
+    workflow.yml
+
+# Monitor
+pegasus-status -l <submit_dir>
+
+# Resume after a failure (skips already-completed jobs)
+pegasus-run <submit_dir>
+```
+
+Results are written to `output/`. The two HTCondor slots run eligible jobs in parallel.
+
+> **Note:** `PEGASUS_HOME` is detected automatically from the `pegasus-plan` binary on `PATH` and written into `sites.yml` at generation time. If Pegasus is moved or reinstalled, re-run `workflow_generator.py --local` before re-planning.
+
 ## Workflow Architecture
 
 ```
@@ -276,6 +331,9 @@ Optional Arguments:
   -s, --skip-sites-catalog        Skip site catalog creation
   --end-date YYYY-MM-DD           End date (default: start + 30 days)
   --min-magnitude FLOAT           Minimum magnitude (default: 4.0)
+  --local                         Run locally without containers (macOS / systems
+                                  without Singularity). Uses HTCondor vanilla universe
+                                  with getenv=True and sharedfs data configuration.
 
 Clustering Options:
   --cluster-method METHOD         dbscan, kmeans, or hierarchical (default: dbscan)
