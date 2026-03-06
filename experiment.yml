@@ -1,0 +1,145 @@
+# -------------------------------------------------------------------------
+#
+# Kiso experiment configuration for the Earthquake Analysis Workflow
+# on the FABRIC testbed.
+#
+# Prerequisites:
+#   pip install kiso[fabric]
+#   Place your FABRIC credentials file at: secrets/fabric_rc.py
+#
+# Usage:
+#   kiso check  experiment.yml          # Validate configuration
+#   kiso up     experiment.yml          # Provision FABRIC resources
+#   kiso run    experiment.yml          # Run the Pegasus workflow
+#   kiso down   experiment.yml          # Release FABRIC resources
+#
+# -------------------------------------------------------------------------
+
+name: earthquake-workflow
+
+# ---------------------------------------------------------------------------
+# HTCondor cluster layout
+#   - 1 node acts as both the central manager and submit node
+#   - 4 nodes act as execute (worker) nodes
+# ---------------------------------------------------------------------------
+deployment:
+  htcondor:
+    - kind: central-manager
+      labels:
+        - central-manager-daemon
+    - kind: submit
+      labels:
+        - submit-daemon
+    - kind: execute
+      labels:
+        - execute-daemon
+
+# ---------------------------------------------------------------------------
+# Apptainer is installed on execute nodes so that HTCondor jobs can pull and
+# run the Singularity/Docker container (kthare10/earthquake-analysis:latest)
+# ---------------------------------------------------------------------------
+software:
+  apptainer:
+    labels:
+      - execute-daemon
+
+# ---------------------------------------------------------------------------
+# FABRIC site
+#   - Replace `rc_file` with the path to your FABRIC token / credential file
+#   - Replace `site` with your preferred FABRIC site (e.g. TACC, UCSD, UTAH)
+#   - submit node : extra-large (6 cores / 6 GB) – runs Pegasus + HTCondor CM
+#   - execute nodes: large (4 cores / 4 GB) × 4 – each job needs up to 4 GB
+# ---------------------------------------------------------------------------
+sites:
+  - kind: fabric
+    rc_file: secrets/fabric_rc
+    walltime: "04:00:00"
+    site: UCSD
+    image: default_rocky_8
+    name_prefix: earthquake-workflow
+    resources:
+      machines:
+        - labels:
+            - central-manager-daemon
+            - submit-daemon
+          flavour_desc:
+            core: 6
+            mem: 4
+            disk: 30
+          number: 1
+        - labels:
+            - execute-daemon
+          flavour_desc:
+            core: 4
+            mem: 6
+            disk: 30
+          number: 2
+      networks:
+        - labels:
+            - fabric-network
+          name: earthquake-net
+          kind: FABNetv4
+          site: UCSD
+          nic:
+            kind: SharedNIC
+            model: ConnectX-6
+
+# ---------------------------------------------------------------------------
+# Pegasus workflow experiment
+#   The main script is executed on the submit node after Kiso has:
+#     1. Copied the experiment directory to ~kiso/earthquake-workflow/
+#     2. Run the setup scripts
+#   The script generates the Pegasus DAG (workflow.yml) and runs pegasus-plan.
+#   Kiso parses the pegasus-plan output for the submit directory, then calls
+#   pegasus-run and monitors the workflow to completion.
+# ---------------------------------------------------------------------------
+experiments:
+  - kind: pegasus
+    name: earthquake-workflow
+    description: >
+      11-step seismic analysis pipeline: fetches USGS earthquake data for one
+      or more regions and runs parallel analysis jobs (pattern analysis,
+      anomaly detection, zone clustering, aftershock prediction, hazard
+      assessment, gap analysis) with visualizations via HTCondor on FABRIC.
+    count: 1
+
+    # Inline bash script that generates and plans the Pegasus workflow.
+    # Kiso detects the "pegasus-run <submit-dir>" line in the plan output and
+    # calls pegasus-run automatically.
+    main: |
+      #!/bin/bash
+      set -e
+      ./workflow_generator.py \
+        --regions california \
+        --start-date 1994-01-01 \
+        --end-date 1994-01-31 \
+        --min-magnitude 3.0 \
+        --execution-site-name condorpool \
+        -o workflow.yml
+      pegasus-plan \
+        -s condorpool \
+        -o local \
+        workflow.yml
+
+    submit_node_labels:
+      - submit-daemon
+
+    # Timeout (seconds) before considering the workflow failed — CNN training
+    # on the PlantVillage dataset can take several hours.
+    timeout: 14400   # 4 hours
+    poll_interval: 60
+
+    # Make all scripts executable before the main script runs
+    setup:
+      - labels:
+          - submit-daemon
+        script: |
+          chmod +x ~/earthquake-workflow/workflow_generator.py
+          chmod +x ~/earthquake-workflow/bin/*.py
+
+    # Copy workflow output files (CSV, JSON, PNG) back to the local machine
+    outputs:
+      - labels:
+          - submit-daemon
+        src: ~kiso/earthquake-workflow/output/
+        dst: ./output/
