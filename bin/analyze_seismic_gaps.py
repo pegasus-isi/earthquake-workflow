@@ -871,8 +871,21 @@ Examples:
         output_path = Path(args.output)
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
+        def _json_safe(obj):
+            # numpy scalars (bool_, integer, floating) and arrays are not
+            # JSON serializable; convert them at dump time.
+            if isinstance(obj, np.bool_):
+                return bool(obj)
+            if isinstance(obj, np.integer):
+                return int(obj)
+            if isinstance(obj, np.floating):
+                return float(obj)
+            if isinstance(obj, np.ndarray):
+                return obj.tolist()
+            raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
+
         with open(output_path, 'w') as f:
-            json.dump(report, f, indent=2)
+            json.dump(report, f, indent=2, default=_json_safe)
 
         logger.info(f"Gap analysis saved to {args.output}")
 

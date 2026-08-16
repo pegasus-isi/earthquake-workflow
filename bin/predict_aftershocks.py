@@ -909,6 +909,14 @@ def run_inference_pipeline(
             },
             'mainshock_predictions': []
         }
+        # Always write the declared output, even with nothing to predict:
+        # a job that exits without its output file is held by HTCondor on
+        # stage-out and hangs the DAG.
+        output_path = Path(output_file)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(output_file, 'w') as f:
+            json.dump(report, f, indent=2)
+        logger.info(f"No-mainshock report saved to {output_file}")
         return report
 
     # Load ML model if specified
