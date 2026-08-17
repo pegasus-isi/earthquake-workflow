@@ -68,7 +68,7 @@ This workflow fetches, analyzes, and visualizes earthquake data from the USGS FD
 ### Workflow Orchestration
 
 - **Pegasus Workflow**: Complete workflow orchestration
-  - Singularity container support
+  - Apptainer container support
   - HTCondor integration
   - Parallel job execution
   - 11-step analysis pipeline
@@ -111,7 +111,55 @@ Both notebooks provision the following cluster architecture:
 
 ## Quick Start
 
-### 1. Generate and Run Workflow
+### 1. Build the Container
+
+Do this first — the generator in step 2 expects the `.sif` to exist.
+
+```bash
+# Run from the workflow root. No registry push needed: Pegasus stages the .sif
+# like any other input file.
+apptainer build Apptainer/Earthquake_Container.sif Apptainer/Earthquake_Container.def
+
+# Verify
+apptainer exec Apptainer/Earthquake_Container.sif \
+    python -c "import pandas, sklearn, scipy; print('ok')"
+apptainer exec Apptainer/Earthquake_Container.sif which curl wget
+```
+
+`workflow_generator.py` looks for `Apptainer/Earthquake_Container.sif` by default
+(override with `--container-sif`).
+
+Apptainer cannot build on macOS, and a `.sif` is single-architecture — build on a
+Linux host matching your worker nodes. See [`APPTAINER.md`](APPTAINER.md). The
+legacy `Docker/Earthquake_Dockerfile` is kept as a fallback.
+
+<details>
+<summary>Optional: publish the image to ghcr.io</summary>
+
+Useful for sharing one build across a team or citing an immutable artifact. Needs a
+GitHub token with `write:packages`.
+
+```bash
+echo "$GHCR_TOKEN" | apptainer registry login --username <github-user> \
+    --password-stdin oras://ghcr.io
+
+TAG=$(git rev-parse --short HEAD)
+apptainer push Apptainer/Earthquake_Container.sif \
+    oras://ghcr.io/pegasus-isi/earthquake-workflow:$TAG
+
+# On the submit host, pull back to the path the generator expects
+apptainer pull Apptainer/Earthquake_Container.sif \
+    oras://ghcr.io/pegasus-isi/earthquake-workflow:$TAG
+```
+
+Do **not** put the `oras://` URL in the transformation catalog — Pegasus supports
+`docker://`, `shub://`, `library://`, `shifter://` and `file://`, not `oras://`.
+Treat ghcr.io as a distribution channel and keep staging the local `.sif`. Details in
+[`APPTAINER.md`](APPTAINER.md).
+
+</details>
+
+### 2. Generate and Run Workflow
 
 ```bash
 cd earthquake-workflow
@@ -131,7 +179,7 @@ pegasus-plan --submit -s condorpool -o local workflow_california.yml
 pegasus-status <submit_dir>
 ```
 
-### 2. Run Individual Scripts
+### 3. Run Individual Scripts
 
 ```bash
 # Fetch earthquake data
@@ -487,11 +535,9 @@ htcondor
 
 ## Container
 
-The workflow uses a Singularity container with all dependencies:
-
-```
-docker://kthare10/earthquake-analysis:latest
-```
+See [Quick Start step 1](#1-build-the-container) for the build command and the
+optional ghcr.io publishing recipe. [`APPTAINER.md`](APPTAINER.md) has the
+definition-file reference and the Docker-to-Apptainer translation notes.
 
 ## API Rate Limits
 

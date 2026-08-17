@@ -35,8 +35,9 @@ deployment:
         - execute-daemon
 
 # ---------------------------------------------------------------------------
-# Apptainer is installed on execute nodes so that HTCondor jobs can pull and
-# run the Singularity/Docker container (kthare10/earthquake-analysis:latest)
+# Apptainer is installed on execute nodes so that HTCondor jobs can run
+# Apptainer/Earthquake_Container.sif. Pegasus stages that .sif from the submit
+# host (image_site="local"), so there is no registry pull on the execute side.
 # ---------------------------------------------------------------------------
 software:
   apptainer:

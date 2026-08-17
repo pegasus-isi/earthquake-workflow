@@ -110,17 +110,35 @@ class EarthquakeWorkflow:
 
         self.sc.add_sites(local, exec_site)
 
-    def create_transformation_catalog(self, exec_site_name="condorpool"):
+    def create_transformation_catalog(
+        self,
+        exec_site_name="condorpool",
+        container_sif="Apptainer/Earthquake_Container.sif",
+    ):
         """Create transformation catalog with executables and containers."""
         logger.info("Creating transformation catalog")
         self.tc = TransformationCatalog()
 
-        # Container - use Singularity with docker:// URL
+        # Container - a local Apptainer .sif built with `apptainer build`.
+        # Pegasus stages the file like any other input, so image_site is the
+        # site where the .sif physically lives (the submit host = "local").
+        sif_path = (
+            container_sif
+            if os.path.isabs(container_sif)
+            else os.path.join(self.wf_dir, container_sif)
+        )
+        if not os.path.exists(sif_path):
+            logger.warning(
+                "Apptainer image not found at %s — build it first with: "
+                "apptainer build %s Apptainer/Earthquake_Container.def",
+                sif_path,
+                sif_path,
+            )
         earthquake_container = Container(
             "earthquake_container",
             container_type=Container.SINGULARITY,
-            image="docker://kthare10/earthquake-analysis:latest",
-            image_site="docker_hub",
+            image="file://" + sif_path,
+            image_site="local",
         )
 
         # Add transformations
@@ -655,6 +673,12 @@ Available regions:
         default=0.3,
         help="Rate ratio threshold for gap detection (default: 0.3)"
     )
+    parser.add_argument(
+        "--container-sif",
+        default="Apptainer/Earthquake_Container.sif",
+        help="Path to the Apptainer .sif image, absolute or relative to the "
+             "workflow directory (default: Apptainer/Earthquake_Container.sif)"
+    )
 
     args = parser.parse_args()
 
@@ -699,7 +723,9 @@ Available regions:
         workflow.create_pegasus_properties()
 
         logger.info("Creating transformation catalog...")
-        workflow.create_transformation_catalog(args.execution_site_name)
+        workflow.create_transformation_catalog(
+            args.execution_site_name, container_sif=args.container_sif
+        )
 
         logger.info("Creating replica catalog...")
         workflow.create_replica_catalog()
