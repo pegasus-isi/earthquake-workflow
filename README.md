@@ -487,11 +487,19 @@ htcondor
 
 ## Container
 
-The workflow uses a Singularity container with all dependencies:
+The workflow uses an Apptainer container with all dependencies, built from
+`Apptainer/Earthquake_Container.def` and staged by Pegasus like any other input
+file (`image_site="local"` — no registry pull):
 
+```sh
+apptainer build Apptainer/Earthquake_Container.sif Apptainer/Earthquake_Container.def
 ```
-docker://kthare10/earthquake-analysis:latest
-```
+
+`workflow_generator.py` looks for `Apptainer/Earthquake_Container.sif` by default
+(override with `--container-sif`). Apptainer cannot build on macOS, and a `.sif`
+is single-architecture — build on a Linux host matching your worker nodes. See
+`../APPTAINER.md`. The legacy `Docker/Earthquake_Dockerfile` is kept as a
+fallback.
 
 ## API Rate Limits
 

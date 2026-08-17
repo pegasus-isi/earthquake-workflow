@@ -8,10 +8,10 @@ echo "========================================"
 
 # Build Docker container (optional, if using locally)
 echo ""
-echo "1. Build Docker container:"
-echo "   cd Docker"
-echo "   docker build -f Earthquake_Dockerfile -t kthare10/earthquake-analysis:latest ."
-echo "   docker push kthare10/earthquake-analysis:latest"
+echo "1. Build the container (no registry push — Pegasus stages the .sif):"
+echo "   apptainer build Apptainer/Earthquake_Container.sif \\"
+echo "       Apptainer/Earthquake_Container.def"
+echo "   # Apptainer cannot build on macOS; see ../APPTAINER.md"
 
 # Example 1: Single region (California)
 echo ""

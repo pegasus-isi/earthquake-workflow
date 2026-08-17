@@ -40,11 +40,12 @@ pegasus-status <submit_dir>
 pegasus-analyzer <submit_dir>
 ```
 
-### Build and push Docker container
+### Build the container
 ```bash
-cd Docker
-docker build -f Earthquake_Dockerfile -t kthare10/earthquake-analysis:latest .
-docker push kthare10/earthquake-analysis:latest
+# From the workflow root. No registry push — Pegasus stages the .sif like any
+# other input file. Apptainer cannot build on macOS and a .sif is
+# single-architecture; see ../APPTAINER.md.
+apptainer build Apptainer/Earthquake_Container.sif Apptainer/Earthquake_Container.def
 ```
 
 ## Architecture
@@ -68,7 +69,7 @@ Dependencies are inferred automatically by Pegasus via `infer_dependencies=True`
 
 - **`workflow_generator.py`** — `EarthquakeWorkflow` class builds the Pegasus DAG (SiteCatalog, TransformationCatalog, ReplicaCatalog, Workflow). One set of 11 jobs is added per region.
 - **`bin/`** — Standalone Python scripts; each is executable and takes `--input`/`--output` CLI args. Scripts produce CSV (raw data), JSON (analysis results), or PNG (visualizations).
-- **`Docker/Earthquake_Dockerfile`** — Container used by Pegasus workers (Python 3.8 + pandas/numpy/matplotlib/scipy/scikit-learn).
+- **`Apptainer/Earthquake_Container.def`** — Container used by Pegasus workers (Python 3.8 + pandas/numpy/matplotlib/scipy/scikit-learn). The legacy `Docker/Earthquake_Dockerfile` is kept as a fallback.
 - **`Access-Earthquake-workflow.ipynb`** — Jupyter notebook for running on ACCESS/FABRIC HPC resources.
 - **`scratch/`** / **`output/`** — Pegasus working directories; outputs land in `output/` as `{region}_*.{csv,json,png}`.
 
@@ -77,7 +78,7 @@ Dependencies are inferred automatically by Pegasus via `infer_dependencies=True`
 - **Local**: Run `bin/` scripts directly with Python
 - **HTCondor/Pegasus**: Use `workflow_generator.py` to create the DAG, then `pegasus-plan --submit`
 - **ACCESS / FABRIC**: Use the Jupyter notebook; requires Pegasus + HTCondor pre-configured on the cluster
-- **Container**: Singularity pulls `docker://kthare10/earthquake-analysis:latest` on worker nodes
+- **Container**: Pegasus stages `Apptainer/Earthquake_Container.sif` to the worker nodes (`image_site="local"`); no registry pull
 
 ### Predefined regions
 
