@@ -44,7 +44,7 @@ pegasus-analyzer <submit_dir>
 ```bash
 # From the workflow root. No registry push — Pegasus stages the .sif like any
 # other input file. Apptainer cannot build on macOS and a .sif is
-# single-architecture; see ../APPTAINER.md.
+# single-architecture; see APPTAINER.md.
 apptainer build Apptainer/Earthquake_Container.sif Apptainer/Earthquake_Container.def
 ```
 

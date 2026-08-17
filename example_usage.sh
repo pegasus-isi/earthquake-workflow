@@ -11,7 +11,7 @@ echo ""
 echo "1. Build the container (no registry push — Pegasus stages the .sif):"
 echo "   apptainer build Apptainer/Earthquake_Container.sif \\"
 echo "       Apptainer/Earthquake_Container.def"
-echo "   # Apptainer cannot build on macOS; see ../APPTAINER.md"
+echo "   # Apptainer cannot build on macOS; see APPTAINER.md"
 
 # Example 1: Single region (California)
 echo ""
