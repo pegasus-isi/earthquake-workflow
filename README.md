@@ -164,19 +164,46 @@ Treat ghcr.io as a distribution channel and keep staging the local `.sif`. Detai
 ```bash
 cd earthquake-workflow
 
-# Generate workflow for California earthquakes
+# Generate with the built-in defaults — no arguments needed
+./workflow_generator.py
+
+# Submit to Pegasus/HTCondor
+pegasus-plan --submit -s condorpool -o local workflow.yml
+
+# Monitor status
+pegasus-status <submit_dir>
+```
+
+Running the generator with no arguments produces a workflow every step of which
+gets real data, so it can be launched straight from Pegasus AI Studio:
+
+| Default | Value | Why |
+| --- | --- | --- |
+| `--regions` | `california` | One region = 11 jobs; dense, well-recorded catalog |
+| `--start-date` | `2000-01-01` | 26-year span covers the 20-year historical + 5-year recent windows `analyze_seismic_gaps` compares |
+| `--end-date` | `2025-12-31` | Fixed window, so runs are reproducible |
+| `--min-magnitude` | `3.0` | ~12,200 events — under the USGS 20,000-per-query cap |
+
+That catalog contains ~1,200 events at M≥4.0 (what `assess_seismic_hazard`
+analyzes) and ~90 at M≥5.0 (mainshocks for `predict_aftershocks`).
+
+`--end-date` still defaults to `--start-date` + 30 days whenever you pass an
+explicit `--start-date`; the `2025-12-31` default applies only when both dates
+are left alone.
+
+> `assess_seismic_hazard` is the long pole — roughly 10 minutes at the default
+> `--hazard-grid-resolution 1.0` (156 grid points). Raise the resolution value to
+> shorten it; halving it to `0.5` quadruples the grid and the runtime.
+
+To override any of it, pass the flags explicitly:
+
+```bash
 ./workflow_generator.py \
     --regions california \
     --start-date 1994-01-01 \
     --end-date 1994-01-31 \
     --min-magnitude 3.0 \
     -o workflow_california.yml
-
-# Submit to Pegasus/HTCondor
-pegasus-plan --submit -s condorpool -o local workflow_california.yml
-
-# Monitor status
-pegasus-status <submit_dir>
 ```
 
 ### 3. Run Individual Scripts

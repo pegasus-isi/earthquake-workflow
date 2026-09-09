@@ -13,9 +13,14 @@ echo "   apptainer build Apptainer/Earthquake_Container.sif \\"
 echo "       Apptainer/Earthquake_Container.def"
 echo "   # Apptainer cannot build on macOS; see APPTAINER.md"
 
+# Example 0: defaults only
+echo ""
+echo "2. Example 0: no arguments — california, 2000-01-01 to 2025-12-31, M3.0+"
+echo "   ./workflow_generator.py"
+
 # Example 1: Single region (California)
 echo ""
-echo "2. Example 1: California earthquakes (M4.0+, January 2024)"
+echo "2b. Example 1: California earthquakes (M4.0+, January 2024)"
 echo "   ./workflow_generator.py \\"
 echo "       --regions california \\"
 echo "       --start-date 2024-01-01 \\"
