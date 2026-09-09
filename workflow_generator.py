@@ -599,7 +599,7 @@ Available regions:
     parser.add_argument(
         "--start-date",
         type=str,
-        default=DEFAULT_START_DATE,
+        default=None,
         help=f"Start date (YYYY-MM-DD) (default: {DEFAULT_START_DATE})"
     )
     parser.add_argument(
@@ -701,13 +701,19 @@ Available regions:
 
     args = parser.parse_args()
 
-    # Parse dates
+    # Parse dates. --start-date defaults to None rather than to
+    # DEFAULT_START_DATE so that "left alone" can be told apart from
+    # "explicitly given the default value"; only the former pairs with
+    # DEFAULT_END_DATE. Passing --start-date 2000-01-01 by hand still means
+    # start + 30 days, as documented.
+    start_date_given = args.start_date is not None
+    if not start_date_given:
+        args.start_date = DEFAULT_START_DATE
+
     start_date = parse_date(args.start_date)
     if args.end_date:
         end_date = parse_date(args.end_date)
-    elif args.start_date == DEFAULT_START_DATE:
-        # Both dates left alone: use the paired default window rather than
-        # truncating the default catalog to its first 30 days.
+    elif not start_date_given:
         end_date = parse_date(DEFAULT_END_DATE)
     else:
         end_date = start_date + timedelta(days=30)
