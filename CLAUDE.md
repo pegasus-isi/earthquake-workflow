@@ -29,7 +29,11 @@ pip install -r requirements.txt
 
 ### Generate and submit a Pegasus workflow
 ```bash
-# Generate workflow DAG
+# Generate workflow DAG with the built-in defaults (california, 2000-01-01 to
+# 2025-12-31, M3.0+) — this is what a zero-arg Studio launch runs
+./workflow_generator.py
+
+# Or override any of it
 ./workflow_generator.py --regions california --start-date 2024-01-01 --end-date 2024-01-31 --min-magnitude 4.0 -o workflow.yml
 
 # Submit to HTCondor via Pegasus
@@ -83,6 +87,21 @@ Dependencies are inferred automatically by Pegasus via `infer_dependencies=True`
 ### Predefined regions
 
 `pacific_ring`, `california`, `japan`, `indonesia`, `turkey`, `chile`, `worldwide`
+
+### Zero-argument defaults
+
+`workflow_generator.py` runs with no arguments (`DEFAULT_REGIONS`,
+`DEFAULT_START_DATE`, `DEFAULT_END_DATE` near the top of the file): california,
+2000-01-01 → 2025-12-31, M3.0+ — ~12,200 events, of which ~1,200 are M≥4.0
+(the internal filter `assess_seismic_hazard` applies) and ~90 are M≥5.0
+(mainshocks for `predict_aftershocks`). The 26-year span is deliberate: it
+covers the 20-year historical + 5-year recent periods `analyze_seismic_gaps`
+compares. `--end-date` keeps its `--start-date` + 30 days behaviour whenever an
+explicit `--start-date` is given.
+
+Note that non-default region/magnitude combinations can exceed the USGS
+20,000-event cap (e.g. `japan` at M3.0 over the default window); the fetch job
+fails loudly with the API's error when that happens.
 
 ### Data source
 

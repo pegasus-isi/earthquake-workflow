@@ -17,6 +17,9 @@ This script generates a Pegasus workflow for analyzing earthquake data from USGS
 11. Visualize seismic gaps (gap maps, rate ratios, potential magnitudes)
 
 Usage:
+    # Zero-argument run — uses the default California 2000-2025 catalog
+    ./workflow_generator.py
+
     ./workflow_generator.py --regions california japan \
                             --start-date 2024-01-01 \
                             --end-date 2024-01-31 \
@@ -46,6 +49,17 @@ from Pegasus.api import *
 logging.basicConfig(level=logging.INFO,
                    format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
+
+# Defaults for a zero-argument run (e.g. launching from Pegasus AI Studio).
+# These are chosen so every one of the 11 analysis steps gets real data:
+#   * ~12,200 events (USGS caps a single query at 20,000)
+#   * ~1,200 events at M>=4.0, which is what assess_seismic_hazard uses
+#   * ~90 events at M>=5.0, so predict_aftershocks finds real mainshocks
+#   * a 26-year span, which covers the 20-year historical + 5-year recent
+#     periods that analyze_seismic_gaps compares by default
+DEFAULT_REGIONS = ["california"]
+DEFAULT_START_DATE = "2000-01-01"
+DEFAULT_END_DATE = "2025-12-31"
 
 
 class EarthquakeWorkflow:
@@ -529,6 +543,9 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
+  # No arguments — California, 2000-01-01 to 2025-12-31, M3.0+
+  %(prog)s
+
   # Single region
   %(prog)s --regions california --start-date 2024-01-01 --end-date 2024-01-31
 
@@ -575,20 +592,22 @@ Available regions:
         "--regions",
         type=str,
         nargs="+",
-        required=True,
-        help="Region names (pacific_ring, california, japan, indonesia, turkey, chile, worldwide)"
+        default=DEFAULT_REGIONS,
+        help="Region names (pacific_ring, california, japan, indonesia, "
+             f"turkey, chile, worldwide) (default: {' '.join(DEFAULT_REGIONS)})"
     )
     parser.add_argument(
         "--start-date",
         type=str,
-        required=True,
-        help="Start date (YYYY-MM-DD)"
+        default=DEFAULT_START_DATE,
+        help=f"Start date (YYYY-MM-DD) (default: {DEFAULT_START_DATE})"
     )
     parser.add_argument(
         "--end-date",
         type=str,
         default=None,
-        help="End date (YYYY-MM-DD), defaults to start_date + 30 days"
+        help="End date (YYYY-MM-DD). Defaults to start_date + 30 days, or to "
+             f"{DEFAULT_END_DATE} when --start-date is also left at its default"
     )
     parser.add_argument(
         "--min-magnitude",
@@ -686,6 +705,10 @@ Available regions:
     start_date = parse_date(args.start_date)
     if args.end_date:
         end_date = parse_date(args.end_date)
+    elif args.start_date == DEFAULT_START_DATE:
+        # Both dates left alone: use the paired default window rather than
+        # truncating the default catalog to its first 30 days.
+        end_date = parse_date(DEFAULT_END_DATE)
     else:
         end_date = start_date + timedelta(days=30)
 
