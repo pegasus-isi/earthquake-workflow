@@ -167,7 +167,8 @@ cd earthquake-workflow
 # Generate with the built-in defaults — no arguments needed
 ./workflow_generator.py
 
-# Submit to Pegasus/HTCondor
+# Submit to Pegasus/HTCondor (use the site you generated for; the generator
+# prints the exact command — see "Choose Where It Runs")
 pegasus-plan --submit -s condorpool -o local workflow.yml
 
 # Monitor status
@@ -191,9 +192,11 @@ analyzes) and ~90 at M≥5.0 (mainshocks for `predict_aftershocks`).
 explicit `--start-date`; the `2025-12-31` default applies only when both dates
 are left alone.
 
-> `assess_seismic_hazard` is the long pole — roughly 10 minutes at the default
-> `--hazard-grid-resolution 1.0` (156 grid points). Raise the resolution value to
-> shorten it; halving it to `0.5` quadruples the grid and the runtime.
+> `assess_seismic_hazard` is the long pole — 35–55 minutes on cluster workers
+> at the default `--hazard-grid-resolution 1.0` (156 grid points; measured on an
+> HTCondor pool and on Unity), versus seconds for every other step. Raise the
+> resolution value to shorten it; halving it to `0.5` quadruples the grid and the
+> runtime.
 
 To override any of it, pass the flags explicitly:
 
@@ -206,7 +209,94 @@ To override any of it, pass the flags explicitly:
     -o workflow_california.yml
 ```
 
-### 3. Run Individual Scripts
+### 3. Choose Where It Runs
+
+The workflow itself names no scheduler. Each job states only cores, memory
+and a wall-clock `runtime`. Everything site-specific goes in `sites.yml`,
+which the generator manages through `custom_sites.py` using these rules,
+most specific first:
+
+1. **A `sites.yml` entry you provided** for the execution site is kept
+   untouched, whether you wrote it by hand or with `custom_sites.py`.
+2. **A hosted catalog** named in `~/.pegasusrc`
+   ([pegasushub/pegasus-site-catalogs](https://github.com/pegasushub/pegasus-site-catalogs/tree/main/conf),
+   e.g. Unity) is used as-is, and Pegasus merges `sites.yml` over it.
+3. **Otherwise, an HTCondor site is added.** With no options at all, as in
+   Pegasus Studio, the generator writes `condorpool` plus a `local` site with
+   output in `./output`.
+
+Only the execution site's entry is ever written, plus `local` if it is
+missing. Other entries in `sites.yml` are kept.
+
+**HTCondor pool (default):**
+
+```bash
+./workflow_generator.py
+```
+
+**Slurm cluster, e.g. Studio on Open OnDemand.** These are ordinary generator
+options, so they also appear in the Studio run form:
+
+```bash
+./workflow_generator.py -e compute --site-style slurm \
+    --queue cpu --project my_lab --site-scratch /scratch/$USER/earthquake
+```
+
+**Hosted catalog (Unity):**
+
+```bash
+echo "pegasus.catalog.site.repo.file = unity.yml" >> ~/.pegasusrc
+./workflow_generator.py --site-style slurm --project my_lab   # -e defaults to compute
+```
+
+Against a hosted catalog, `--site-style slurm` writes only your overrides
+(account, queue, profiles) plus the site's submission style, rather than a
+whole site. The style matches the hosted entry, so merging it changes nothing,
+and it lets later runs know the site is Slurm before the planner has downloaded
+the hosted file. A style that contradicts the hosted catalog is rejected. A site the hosted
+catalog does not define (e.g. `-e condorpool --site-style condor` next to a
+hosted `compute`) gets a complete entry, since there is nothing to overlay.
+
+| Option | Default | Meaning |
+|---|---|---|
+| `-e, --execution-site` | `compute` with a hosted catalog, else `condorpool` | Site to plan against. Hosted catalogs define only `compute`. `--execution-site-name` still works. |
+| `--site-style` | `auto` | `auto`: keep what exists, else add an HTCondor site. `condor`/`slurm`: (re)write this site's entry. `none`: don't touch `sites.yml`. |
+| `--queue`, `--project` | — | Partition and account on a batch site (`pegasus.queue`, `pegasus.project`). |
+| `--site-scratch` | `./work` | Slurm: shared scratch visible to the workers and the submit host. |
+| `--site-profile NS:KEY=VALUE` | — | Any other site profile, e.g. `pegasus:glite.arguments=--constraint=avx512`. Repeatable. |
+| `--shared-filesystem` | `auto` | Let jobs read inputs, including the `.sif`, straight from the submit host (`pegasus.transfer.bypass.input.staging`). `auto` turns it on for Slurm/glite sites and off for HTCondor, where files are staged over HTCondor file transfer. |
+| `--sites-yml` | `sites.yml` | Site catalog to manage; named in `pegasus.properties`. |
+| `-s, --skip-sites-catalog` | — | Deprecated: same as `--site-style none`. |
+
+`./custom_sites.py` runs the same logic on its own, for preparing a
+`sites.yml` once and reusing it (`./custom_sites.py --help`).
+
+Notes:
+
+- **Slurm submission** goes through HTCondor's glite/BLAHP, so plan on the
+  cluster's login node with HTCondor and Pegasus installed.
+- **Runtime budgets** (`TOOLS` in `workflow_generator.py`) are generous:
+  2 h for `assess_seismic_hazard`, 1 h for `predict_aftershocks`, and
+  15–30 min for everything else. Batch sites kill a job that exceeds its
+  budget; condor pools ignore it. The hazard budget fits the default 1.0°
+  grid (35–55 min measured); raise it in `TOOLS` before using a finer grid,
+  since 0.5° takes roughly 4× as long.
+- **Build the image on a compute node** of a Slurm cluster. An unprivileged
+  build needs `--ignore-fakeroot-command`, because the `faked` daemon does
+  not start there:
+  `srun -p cpu -A <account> -t 60 -c 4 --mem=16G apptainer build --fakeroot --ignore-fakeroot-command Apptainer/Earthquake_Container.sif Apptainer/Earthquake_Container.def`.
+- **Worker package.** When `pegasus-version` is on the PATH, the generator
+  stages a container-compatible Pegasus worker package (`rhel_8`, matched to
+  the planner's version) as `pegasus::worker`, and turns off downloading
+  inside jobs. This works whatever the submit host's OS or Pegasus build is,
+  and without curl in the image.
+- **Container bind.** On batch sites the container binds the workflow
+  directory, because staged inputs are symlinks into it and PegasusLite
+  starts containers with `--no-home`. Without the bind, every job fails with
+  kickstart "Unable to execute the specified binary" (exit 127). This bind
+  is never added on a condor pool.
+
+### 4. Run Individual Scripts
 
 ```bash
 # Fetch earthquake data
@@ -347,8 +437,9 @@ Required Arguments:
 
 Optional Arguments:
   -o, --output FILE               Output workflow file (default: workflow.yml)
-  -e, --execution-site-name STR   Execution site (default: condorpool)
-  -s, --skip-sites-catalog        Skip site catalog creation
+  -e, --execution-site STR        Execution site (default: condorpool); see
+                                  "Choose Where It Runs" for --site-style,
+                                  --queue, --project and the other site options
   --end-date YYYY-MM-DD           End date (default: start + 30 days)
   --min-magnitude FLOAT           Minimum magnitude (default: 4.0)
 
@@ -601,6 +692,7 @@ earthquake-workflow/
 │   ├── analyze_seismic_gaps.py            # Seismic gap detection
 │   └── visualize_seismic_gaps.py          # Gap visualization
 ├── workflow_generator.py                   # Pegasus workflow generator
+├── custom_sites.py                         # Site catalog (sites.yml) logic; also standalone
 ├── scratch/                                # Workflow scratch space
 ├── output/                                 # Workflow outputs
 └── README.md                               # This file
