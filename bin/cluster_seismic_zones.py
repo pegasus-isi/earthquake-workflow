@@ -34,7 +34,7 @@ from typing import Dict, List, Optional, Tuple
 import numpy as np
 import pandas as pd
 from scipy import stats
-from scipy.spatial.distance import cdist
+from scipy.spatial.distance import cdist, pdist
 
 # Configure logging
 logging.basicConfig(
@@ -68,28 +68,36 @@ def haversine_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> fl
     return R * c
 
 
-def compute_distance_matrix(df: pd.DataFrame) -> np.ndarray:
+EARTH_RADIUS_KM = 6371.0
+
+
+def condensed_distances(df: pd.DataFrame) -> np.ndarray:
     """
-    Compute pairwise haversine distances between all earthquake locations.
+    Compute pairwise great-circle distances between all earthquake locations.
+
+    Returns the condensed form (scipy's pdist layout, n*(n-1)/2 entries):
+    half the memory of a square matrix, which matters at catalog sizes of
+    ~10^4 events (a square float64 matrix for 12,000 events is ~1.2 GB).
+    Distances come from the chord between unit vectors, converted in place
+    to arc length, which is the haversine distance without a Python loop.
 
     Args:
         df: DataFrame with 'latitude' and 'longitude' columns
 
     Returns:
-        Distance matrix in kilometers
+        Condensed distance vector in kilometers
     """
-    coords = df[['latitude', 'longitude']].values
-    n = len(coords)
-    distances = np.zeros((n, n))
-
-    for i in range(n):
-        for j in range(i + 1, n):
-            d = haversine_distance(coords[i, 0], coords[i, 1],
-                                  coords[j, 0], coords[j, 1])
-            distances[i, j] = d
-            distances[j, i] = d
-
-    return distances
+    lat = np.radians(df['latitude'].values)
+    lon = np.radians(df['longitude'].values)
+    xyz = np.column_stack((np.cos(lat) * np.cos(lon),
+                           np.cos(lat) * np.sin(lon),
+                           np.sin(lat)))
+    d = pdist(xyz)                      # chord lengths on the unit sphere
+    np.multiply(d, 0.5, out=d)
+    np.clip(d, 0.0, 1.0, out=d)
+    np.arcsin(d, out=d)
+    np.multiply(d, 2.0 * EARTH_RADIUS_KM, out=d)
+    return d
 
 
 def cluster_dbscan(df: pd.DataFrame, eps_km: float = 50.0,
@@ -112,13 +120,13 @@ def cluster_dbscan(df: pd.DataFrame, eps_km: float = 50.0,
 
     logger.info(f"Running DBSCAN clustering (eps={eps_km}km, min_samples={min_samples})")
 
-    # Compute distance matrix
-    logger.info("Computing pairwise distances...")
-    distances = compute_distance_matrix(df)
-
-    # Run DBSCAN with precomputed distances
-    clustering = DBSCAN(eps=eps_km, min_samples=min_samples, metric='precomputed')
-    labels = clustering.fit_predict(distances)
+    # Haversine on a ball tree: only neighbors within eps are ever held in
+    # memory, never the full N x N distance matrix. Same metric and eps as
+    # a precomputed haversine matrix, so the same clusters.
+    coords_rad = np.radians(df[['latitude', 'longitude']].values)
+    clustering = DBSCAN(eps=eps_km / EARTH_RADIUS_KM, min_samples=min_samples,
+                        metric='haversine', algorithm='ball_tree')
+    labels = clustering.fit_predict(coords_rad)
 
     n_clusters = len(set(labels)) - (1 if -1 in labels else 0)
     n_noise = list(labels).count(-1)
@@ -174,29 +182,23 @@ def cluster_hierarchical(df: pd.DataFrame, n_clusters: Optional[int] = None,
     Returns:
         Array of cluster labels
     """
-    from sklearn.cluster import AgglomerativeClustering
+    from scipy.cluster.hierarchy import cut_tree, fcluster, linkage
 
     logger.info("Running Hierarchical clustering")
 
-    # Compute distance matrix
+    # Average linkage needs every pairwise distance, but scipy takes them in
+    # condensed form, half the size of the square matrix sklearn requires.
     logger.info("Computing pairwise distances...")
-    distances = compute_distance_matrix(df)
+    tree = linkage(condensed_distances(df), method='average')
 
     if n_clusters is not None:
-        clustering = AgglomerativeClustering(
-            n_clusters=n_clusters,
-            metric='precomputed',
-            linkage='average'
-        )
+        # Cut by merge order, as sklearn does, so exactly n_clusters come
+        # back; fcluster's 'maxclust' cuts by height and returns fewer when
+        # merge heights tie.
+        labels = cut_tree(tree, n_clusters=n_clusters).ravel()
     else:
-        clustering = AgglomerativeClustering(
-            n_clusters=None,
-            distance_threshold=distance_threshold,
-            metric='precomputed',
-            linkage='average'
-        )
-
-    labels = clustering.fit_predict(distances)
+        labels = fcluster(tree, t=distance_threshold, criterion='distance')
+        labels = labels - 1  # fcluster numbers clusters from 1; keep 0-based
     n_found = len(set(labels))
     logger.info(f"Hierarchical clustering found {n_found} clusters")
 
