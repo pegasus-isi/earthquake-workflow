@@ -115,7 +115,7 @@ experiments:
         --start-date 1994-01-01 \
         --end-date 1994-01-31 \
         --min-magnitude 3.0 \
-        --execution-site-name condorpool \
+        -e condorpool \
         -o workflow.yml
       pegasus-plan \
         -s condorpool \

@@ -114,8 +114,9 @@ echo "       --output workflow_indonesia_full.yml"
 
 # Submit workflow
 echo ""
-echo "10. Submit workflow to Pegasus:"
-echo "    pegasus-plan --submit -s condorpool -o local workflow.yml"
+echo "10. Plan and submit (the generator never submits; -s = its -e value:"
+echo "    compute with a hosted site catalog, condorpool on a plain HTCondor pool):"
+echo "    pegasus-plan --dir submit -s compute -o local --submit workflow.yml"
 
 # Monitor workflow
 echo ""
