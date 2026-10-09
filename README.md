@@ -169,7 +169,7 @@ cd earthquake-workflow
 ./workflow_generator.py -e condorpool        # plain HTCondor pool, no site catalog
 
 # Plan and submit (-s = the -e value you generated with)
-pegasus-plan --dir submit -s condorpool -o local --submit workflow.yml
+pegasus-plan --dir submit -s condorpool -o local --output-dir "$PWD/output" --submit workflow.yml
 
 # Monitor status
 pegasus-status <submit_dir>
@@ -229,7 +229,7 @@ Pegasus version.
 
 ```bash
 ./workflow_generator.py -s unity.yml
-pegasus-plan --dir submit -s compute -o local --submit workflow.yml
+pegasus-plan --dir submit -s compute -o local --output-dir "$PWD/output" --submit workflow.yml
 ```
 
 **Hosted catalog, once per user** (as the ACCESS training setup does): put the
@@ -250,12 +250,13 @@ no built-in `compute`, but it provides a default `condorpool` site, so:
 
 ```bash
 ./workflow_generator.py -e condorpool
-pegasus-plan --dir submit -s condorpool -o local --submit workflow.yml
+pegasus-plan --dir submit -s condorpool -o local --output-dir "$PWD/output" --submit workflow.yml
 ```
 
-Outputs from a CLI run land in Pegasus's default local storage, `./wf-output/`.
-The notebook instead writes a local HTCondor `compute` site with
-`create_sites_catalog()`, with outputs in `./output/`.
+Outputs land in `./output/`: the printed plan command passes `--output-dir`
+(otherwise Pegasus's built-in `local` site would use `./wf-output/`). The
+notebook instead writes a local HTCondor `compute` site with
+`create_sites_catalog()`, also with outputs in `./output/`.
 
 | Option | Default | Meaning |
 |---|---|---|

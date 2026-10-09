@@ -42,7 +42,7 @@ pip install -r requirements.txt
 ./workflow_generator.py -e condorpool
 
 # Plan and submit (-s = the -e value)
-pegasus-plan --dir submit -s condorpool -o local --submit workflow.yml
+pegasus-plan --dir submit -s condorpool -o local --output-dir "$PWD/output" --submit workflow.yml
 
 # Monitor
 pegasus-status <submit_dir>
@@ -80,7 +80,7 @@ Dependencies are inferred automatically by Pegasus via `infer_dependencies=True`
 - **`bin/`** — Standalone Python scripts; each is executable and takes `--input`/`--output` CLI args. Scripts produce CSV (raw data), JSON (analysis results), or PNG (visualizations).
 - **`Apptainer/Earthquake_Container.def`** — Container used by Pegasus workers (Python 3.8 + pandas/numpy/matplotlib/scipy/scikit-learn). The legacy `Docker/Earthquake_Dockerfile` is kept as a fallback.
 - **`Access-Earthquake-workflow.ipynb`** — Jupyter notebook for ACCESS/FABRIC: imports `EarthquakeWorkflow` and calls its methods (no copied workflow code), submits from an explicit cell.
-- **`scratch/`** / **`output/`** — Pegasus working directories for the notebook's local site; outputs land in `output/` as `{region}_*.{csv,json,png}`. CLI runs with no local site use Pegasus's default `wf-output/`.
+- **`scratch/`** / **`output/`** — Pegasus working directories for the notebook's local site; outputs land in `output/` as `{region}_*.{csv,json,png}`. CLI runs land there too: the printed plan command passes `--output-dir` (else Pegasus's default `wf-output/`).
 
 ### Execution environments
 

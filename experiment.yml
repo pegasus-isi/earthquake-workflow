@@ -120,6 +120,7 @@ experiments:
       pegasus-plan \
         -s condorpool \
         -o local \
+        --output-dir "$PWD/output" \
         workflow.yml
 
     submit_node_labels:
