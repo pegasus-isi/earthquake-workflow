@@ -164,16 +164,21 @@ Treat ghcr.io as a distribution channel and keep staging the local `.sif`. Detai
 ```bash
 cd earthquake-workflow
 
-# Generate with the built-in defaults — no arguments needed
-./workflow_generator.py
+# Generate with the built-in defaults — no arguments needed. Writes
+# workflow.yml and its catalogs and prints the plan command; it never submits.
+./workflow_generator.py -e condorpool        # plain HTCondor pool, no site catalog
 
-# Submit to Pegasus/HTCondor (use the site you generated for; the generator
-# prints the exact command — see "Choose Where It Runs")
-pegasus-plan --submit -s condorpool -o local workflow.yml
+# Plan and submit (-s = the -e value you generated with)
+pegasus-plan --dir submit -s condorpool -o local --output-dir "$PWD/output" --submit workflow.yml
 
 # Monitor status
 pegasus-status <submit_dir>
 ```
+
+With a hosted site catalog, generate with the default `-e compute` instead and
+plan with `-s compute` (see "Choose Where It Runs"). The notebook
+`Access-Earthquake-workflow.ipynb` runs the same generator class interactively
+and submits from an explicit cell.
 
 Running the generator with no arguments produces a workflow every step of which
 gets real data, so it can be launched straight from Pegasus AI Studio:
@@ -196,7 +201,8 @@ are left alone.
 > at the default `--hazard-grid-resolution 1.0` (156 grid points; measured on an
 > HTCondor pool and on Unity), versus seconds for every other step. Raise the
 > resolution value to shorten it; halving it to `0.5` quadruples the grid and the
-> runtime.
+> runtime. Hosted batch catalogs give each job 2 h by default, enough at
+> `1.0`; at `0.5` add a longer `runtime` to that tool in `workflow_generator.py`.
 
 To override any of it, pass the flags explicitly:
 
@@ -211,90 +217,62 @@ To override any of it, pass the flags explicitly:
 
 ### 3. Choose Where It Runs
 
-The workflow itself names no scheduler. Each job states only cores, memory
-and a wall-clock `runtime`. Everything site-specific goes in `sites.yml`,
-which the generator manages through `custom_sites.py` using these rules,
-most specific first:
+Where jobs run depends on your resource provider and allocation, so it lives in
+a site catalog you choose, never in the generator, which writes no site
+catalog. Jobs run on a site named `compute` (`-e`, the default), the one site
+every centrally hosted catalog
+([pegasushub/pegasus-site-catalogs](https://github.com/pegasushub/pegasus-site-catalogs/tree/main/conf))
+defines; `pegasus-plan` downloads the catalog from the branch matching its
+Pegasus version.
 
-1. **A `sites.yml` entry you provided** for the execution site is kept
-   untouched, whether you wrote it by hand or with `custom_sites.py`.
-2. **A hosted catalog** named in `~/.pegasusrc`
-   ([pegasushub/pegasus-site-catalogs](https://github.com/pegasushub/pegasus-site-catalogs/tree/main/conf),
-   e.g. Unity) is used as-is, and Pegasus merges `sites.yml` over it.
-3. **Otherwise, an HTCondor site is added.** With no options at all, as in
-   Pegasus Studio, the generator writes `condorpool` plus a `local` site with
-   output in `./output`.
-
-Only the execution site's entry is ever written, plus `local` if it is
-missing. Other entries in `sites.yml` are kept.
-
-**HTCondor pool (default):**
+**Hosted catalog, per workflow:**
 
 ```bash
+./workflow_generator.py -s unity.yml
+pegasus-plan --dir submit -s compute -o local --output-dir "$PWD/output" --submit workflow.yml
+```
+
+**Hosted catalog, once per user** (as the ACCESS training setup does): put the
+catalog and the allocation values it references in `~/.pegasusrc`, then
+generate with no `-s`:
+
+```bash
+cat >> ~/.pegasusrc <<'EOF'
+pegasus.catalog.site.repo.file = unity.yml
+env.RESOURCE_USERNAME = jdoe
+env.RESOURCE_PROJECT = my_lab
+EOF
 ./workflow_generator.py
 ```
 
-**Slurm cluster, e.g. Studio on Open OnDemand.** These are ordinary generator
-options, so they also appear in the Studio run form:
+**Plain HTCondor pool with no site catalog** (e.g. a FABRIC slice): Pegasus has
+no built-in `compute`, but it provides a default `condorpool` site, so:
 
 ```bash
-./workflow_generator.py -e compute --site-style slurm \
-    --queue cpu --project my_lab --site-scratch /scratch/$USER/earthquake
+./workflow_generator.py -e condorpool
+pegasus-plan --dir submit -s condorpool -o local --output-dir "$PWD/output" --submit workflow.yml
 ```
 
-**Hosted catalog (Unity):**
-
-```bash
-echo "pegasus.catalog.site.repo.file = unity.yml" >> ~/.pegasusrc
-./workflow_generator.py --site-style slurm --project my_lab   # -e defaults to compute
-```
-
-Against a hosted catalog, `--site-style slurm` writes only your overrides
-(account, queue, profiles) plus the site's submission style, rather than a
-whole site. The style matches the hosted entry, so merging it changes nothing,
-and it lets later runs know the site is Slurm before the planner has downloaded
-the hosted file. A style that contradicts the hosted catalog is rejected. A site the hosted
-catalog does not define (e.g. `-e condorpool --site-style condor` next to a
-hosted `compute`) gets a complete entry, since there is nothing to overlay.
+Outputs land in `./output/`: the printed plan command passes `--output-dir`
+(otherwise Pegasus's built-in `local` site would use `./wf-output/`). The
+notebook instead writes a local HTCondor `compute` site with
+`create_sites_catalog()`, also with outputs in `./output/`.
 
 | Option | Default | Meaning |
 |---|---|---|
-| `-e, --execution-site` | `compute` with a hosted catalog, else `condorpool` | Site to plan against. Hosted catalogs define only `compute`. `--execution-site-name` still works. |
-| `--site-style` | `auto` | `auto`: keep what exists, else add an HTCondor site. `condor`/`slurm`: (re)write this site's entry. `none`: don't touch `sites.yml`. |
-| `--queue`, `--project` | — | Partition and account on a batch site (`pegasus.queue`, `pegasus.project`). |
-| `--site-scratch` | `./work` | Slurm: shared scratch visible to the workers and the submit host. |
-| `--site-profile NS:KEY=VALUE` | — | Any other site profile, e.g. `pegasus:glite.arguments=--constraint=avx512`. Repeatable. |
-| `--shared-filesystem` | `auto` | Let jobs read inputs, including the `.sif`, straight from the submit host (`pegasus.transfer.bypass.input.staging`). `auto` turns it on for Slurm/glite sites and off for HTCondor, where files are staged over HTCondor file transfer. |
-| `--sites-yml` | `sites.yml` | Site catalog to manage; named in `pegasus.properties`. |
-| `-s, --skip-sites-catalog` | — | Deprecated: same as `--site-style none`. |
-
-`./custom_sites.py` runs the same logic on its own, for preparing a
-`sites.yml` once and reusing it (`./custom_sites.py --help`).
+| `-s, --hosted-site-catalog` | (none; `~/.pegasusrc` if set) | Hosted catalog to plan against, e.g. `access-pegasus.yml`, `unity.yml`; written to `pegasus.properties`. |
+| `-e, --execution-site-name` | `compute` | Execution site name; `condorpool` on a plain HTCondor pool with no site catalog. |
 
 Notes:
 
 - **Slurm submission** goes through HTCondor's glite/BLAHP, so plan on the
   cluster's login node with HTCondor and Pegasus installed.
-- **Runtime budgets** (`TOOLS` in `workflow_generator.py`) are generous:
-  2 h for `assess_seismic_hazard`, 1 h for `predict_aftershocks`, and
-  15–30 min for everything else. Batch sites kill a job that exceeds its
-  budget; condor pools ignore it. The hazard budget fits the default 1.0°
-  grid (35–55 min measured); raise it in `TOOLS` before using a finer grid,
-  since 0.5° takes roughly 4× as long.
 - **Build the image on a compute node** of a Slurm cluster. An unprivileged
   build needs `--ignore-fakeroot-command`, because the `faked` daemon does
   not start there:
   `srun -p cpu -A <account> -t 60 -c 4 --mem=16G apptainer build --fakeroot --ignore-fakeroot-command Apptainer/Earthquake_Container.sif Apptainer/Earthquake_Container.def`.
-- **Worker package.** When `pegasus-version` is on the PATH, the generator
-  stages a container-compatible Pegasus worker package (`rhel_8`, matched to
-  the planner's version) as `pegasus::worker`, and turns off downloading
-  inside jobs. This works whatever the submit host's OS or Pegasus build is,
-  and without curl in the image.
-- **Container bind.** On batch sites the container binds the workflow
-  directory, because staged inputs are symlinks into it and PegasusLite
-  starts containers with `--no-home`. Without the bind, every job fails with
-  kickstart "Unable to execute the specified binary" (exit 127). This bind
-  is never added on a condor pool.
+- **Worker package.** The image installs curl and wget, so PegasusLite
+  downloads the Pegasus worker package it needs inside the job.
 
 ### 4. Run Individual Scripts
 
@@ -437,9 +415,9 @@ Required Arguments:
 
 Optional Arguments:
   -o, --output FILE               Output workflow file (default: workflow.yml)
-  -e, --execution-site STR        Execution site (default: condorpool); see
-                                  "Choose Where It Runs" for --site-style,
-                                  --queue, --project and the other site options
+  -s, --hosted-site-catalog FILE  Hosted site catalog, e.g. unity.yml
+  -e, --execution-site-name STR   Execution site (default: compute;
+                                  condorpool on a plain HTCondor pool)
   --end-date YYYY-MM-DD           End date (default: start + 30 days)
   --min-magnitude FLOAT           Minimum magnitude (default: 4.0)
 
@@ -691,8 +669,8 @@ earthquake-workflow/
 │   ├── visualize_seismic_hazard.py        # Hazard visualization
 │   ├── analyze_seismic_gaps.py            # Seismic gap detection
 │   └── visualize_seismic_gaps.py          # Gap visualization
-├── workflow_generator.py                   # Pegasus workflow generator
-├── custom_sites.py                         # Site catalog (sites.yml) logic; also standalone
+├── workflow_generator.py                   # Pegasus workflow generator (writes catalogs, never submits)
+├── Access-Earthquake-workflow.ipynb        # Notebook driving the same generator class
 ├── scratch/                                # Workflow scratch space
 ├── output/                                 # Workflow outputs
 └── README.md                               # This file

@@ -36,11 +36,13 @@ pip install -r requirements.txt
 # Or override any of it
 ./workflow_generator.py --regions california --start-date 2024-01-01 --end-date 2024-01-31 --min-magnitude 4.0 -o workflow.yml
 
-# Slurm instead of the default HTCondor site (also exposed in the Studio form)
-./workflow_generator.py -e compute --site-style slurm --queue <partition> --project <account>
+# The generator writes workflow.yml + catalogs and prints the plan command; it
+# never submits. Sites: -e compute (default) with a hosted catalog (-s unity.yml
+# or ~/.pegasusrc), or -e condorpool on a plain HTCondor pool with no catalog
+./workflow_generator.py -e condorpool
 
-# Submit via Pegasus (use the site you generated for)
-pegasus-plan --submit -s condorpool -o local workflow.yml
+# Plan and submit (-s = the -e value)
+pegasus-plan --dir submit -s condorpool -o local --output-dir "$PWD/output" --submit workflow.yml
 
 # Monitor
 pegasus-status <submit_dir>
@@ -74,18 +76,17 @@ Dependencies are inferred automatically by Pegasus via `infer_dependencies=True`
 
 ### Key files
 
-- **`workflow_generator.py`** — `EarthquakeWorkflow` class builds the Pegasus DAG (properties, TransformationCatalog, ReplicaCatalog, Workflow). One set of 11 jobs is added per region. Per-tool memory and wall-clock `runtime` live in the `TOOLS` table.
-- **`custom_sites.py`** — Site-catalog logic (`ensure_sites_yml`), imported by the generator and runnable standalone. The workflow is site-agnostic: jobs carry only cores, memory and `runtime`, and transformations are registered on `local`, where the scripts live. `sites.yml` precedence: an existing entry the user provided, then a hosted catalog from `~/.pegasusrc`, then a default HTCondor `condorpool`. A `local` site (`./scratch`, `./output`) is always ensured. `--site-style slurm --queue --project` writes a Slurm/glite site; `--shared-filesystem auto` sets `bypass.input.staging` only for non-condor sites, and the container binds the workflow directory there. When `pegasus-version` is available, a `rhel_8` worker package is staged as `pegasus::worker` (the container is Debian 11).
+- **`workflow_generator.py`** — `EarthquakeWorkflow` class builds the Pegasus DAG (properties, TransformationCatalog, ReplicaCatalog, Workflow), following pegasus-isi/pegasus-gromacs. One set of 11 jobs is added per region; per-tool memory lives in the `TOOLS` table. The CLI writes no site catalog and never submits: jobs run on `-e compute` (default) from a hosted catalog (`-s FILE` → `pegasus.catalog.site.repo.file`, or `~/.pegasusrc`), or `-e condorpool` on a plain HTCondor pool. `create_sites_catalog()` (local + HTCondor `compute`) is a placeholder only the notebook calls; `plan_submit()`/`status()`/`wait()`/`statistics()` wrap the Pegasus API for the notebook. Transformations are registered on the execution site. The fetch job has a DAGMan retry of 2.
 - **`bin/`** — Standalone Python scripts; each is executable and takes `--input`/`--output` CLI args. Scripts produce CSV (raw data), JSON (analysis results), or PNG (visualizations).
 - **`Apptainer/Earthquake_Container.def`** — Container used by Pegasus workers (Python 3.8 + pandas/numpy/matplotlib/scipy/scikit-learn). The legacy `Docker/Earthquake_Dockerfile` is kept as a fallback.
-- **`Access-Earthquake-workflow.ipynb`** — Jupyter notebook for running on ACCESS/FABRIC HPC resources.
-- **`scratch/`** / **`output/`** — Pegasus working directories; outputs land in `output/` as `{region}_*.{csv,json,png}`.
+- **`Access-Earthquake-workflow.ipynb`** — Jupyter notebook for ACCESS/FABRIC: imports `EarthquakeWorkflow` and calls its methods (no copied workflow code), submits from an explicit cell.
+- **`scratch/`** / **`output/`** — Pegasus working directories for the notebook's local site; outputs land in `output/` as `{region}_*.{csv,json,png}`. CLI runs land there too: the printed plan command passes `--output-dir` (else Pegasus's default `wf-output/`).
 
 ### Execution environments
 
 - **Local**: Run `bin/` scripts directly with Python
-- **HTCondor/Pegasus**: Use `workflow_generator.py` to create the DAG, then `pegasus-plan --submit`
-- **Slurm (glite) / hosted catalogs such as Unity**: `-e compute --site-style slurm ...`; see README "Choose Where It Runs"
+- **HTCondor/Pegasus**: `workflow_generator.py -e condorpool`, then the printed `pegasus-plan ... --submit`
+- **Slurm (glite) / hosted catalogs such as Unity**: `workflow_generator.py -s unity.yml` (or the catalog in `~/.pegasusrc`), then `pegasus-plan -s compute`; see README "Choose Where It Runs"
 - **ACCESS / FABRIC**: Use the Jupyter notebook; requires Pegasus + HTCondor pre-configured on the cluster
 - **Container**: Pegasus stages `Apptainer/Earthquake_Container.sif` to the worker nodes (`image_site="local"`); no registry pull
 

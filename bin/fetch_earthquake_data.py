@@ -19,6 +19,7 @@ import argparse
 import json
 import logging
 import sys
+import time
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import List, Optional, Tuple
@@ -32,6 +33,44 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
+
+# Columns of the catalog CSV, written even when the fetch fails so the job
+# always produces its declared output (a missing output makes HTCondor hold
+# the job on output transfer and the DAG hangs).
+CATALOG_COLUMNS = [
+    'id', 'time', 'latitude', 'longitude', 'depth_km', 'magnitude',
+    'magnitude_type', 'place', 'event_type', 'status', 'tsunami',
+    'significance', 'net', 'nst', 'dmin', 'rms', 'gap', 'url',
+]
+
+# Transient USGS failures (timeouts, connection resets, 429/5xx) are retried
+# with exponential backoff before the fetch gives up.
+RETRY_ATTEMPTS = 4
+RETRY_BACKOFF_SECONDS = 10
+RETRY_STATUS_CODES = {429, 500, 502, 503, 504}
+
+
+def get_with_retry(url, params, timeout=60):
+    """requests.get with retries on transient errors; raises on the last."""
+    for attempt in range(1, RETRY_ATTEMPTS + 1):
+        try:
+            response = requests.get(url, params=params, timeout=timeout)
+            if response.status_code in RETRY_STATUS_CODES:
+                raise requests.exceptions.HTTPError(
+                    f"HTTP {response.status_code}", response=response)
+            response.raise_for_status()
+            return response
+        except (requests.exceptions.ConnectionError,
+                requests.exceptions.Timeout,
+                requests.exceptions.HTTPError) as e:
+            status = getattr(getattr(e, 'response', None), 'status_code', None)
+            transient = status is None or status in RETRY_STATUS_CODES
+            if not transient or attempt == RETRY_ATTEMPTS:
+                raise
+            wait = RETRY_BACKOFF_SECONDS * 2 ** (attempt - 1)
+            logger.warning(f"USGS request failed ({e}); retry {attempt}/"
+                           f"{RETRY_ATTEMPTS - 1} in {wait}s")
+            time.sleep(wait)
 
 
 def fetch_earthquake_data(
@@ -86,8 +125,7 @@ def fetch_earthquake_data(
     logger.info(f"Magnitude range: {min_magnitude} - {max_magnitude}")
 
     try:
-        response = requests.get(base_url, params=params, timeout=60)
-        response.raise_for_status()
+        response = get_with_retry(base_url, params)
         data = response.json()
 
         features = data.get('features', [])
@@ -202,6 +240,15 @@ def fetch_by_region(
             end_date=end_date,
             min_magnitude=min_magnitude
         )
+
+
+def write_empty_catalog(output_file: str):
+    """Write a header-only catalog so the declared output exists."""
+    output_path = Path(output_file)
+    if output_path.parent and str(output_path.parent) not in ('.', ''):
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame(columns=CATALOG_COLUMNS).to_csv(output_file, index=False)
+    logger.error(f"Wrote an empty catalog to {output_file}")
 
 
 def save_catalog(df: pd.DataFrame, output_file: str):
@@ -367,6 +414,7 @@ Examples:
 
         if df.empty:
             logger.error("No earthquake data fetched. Please check your parameters.")
+            write_empty_catalog(args.output)
             sys.exit(1)
 
         # Save catalog
@@ -378,6 +426,10 @@ Examples:
         logger.error(f"Failed to fetch earthquake data: {e}")
         import traceback
         traceback.print_exc()
+        # USGS is this region's only source, so the job fails — but only
+        # after writing its declared output, so HTCondor does not hold it and
+        # DAGMan can retry it.
+        write_empty_catalog(args.output)
         sys.exit(1)
 
 
